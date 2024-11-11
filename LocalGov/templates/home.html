@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<h1 class="text-center">Local Government Works</h1>
+<p class="text-center">View recent posts by chairmen from different states and local governments in Nigeria</p>
+
+<!-- Existing posts list section -->
+<div class="posts-list">
+    {% for post in posts %}
+    <div class="card mb-3">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <div>
+                <h5 class="card-title">{{ post.title }}</h5>
+                <p><strong>State:</strong> {{ post.state.name }} | <strong>Local Government:</strong> {{ post.local_government.name }}</p>
+                <p><strong>Location:</strong> {{ post.location }}</p> <!-- Display location name -->
+                <p class="text-muted">{{ post.date_posted|date:"F j, Y" }}</p>
+            </div>
+            {% if post.image %}
+                <img src="{{ post.image.url }}" alt="Image for {{ post.title }}" class="img-thumbnail" style="width: 100px; height: auto;">
+            {% endif %}
+        </div>
+
+        <div class="card-body">
+            {% if post.video %}
+                <video controls class="card-img-top">
+                    <source src="{{ post.video.url }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            {% endif %}
+            <p class="card-text">{{ post.description }}</p>
+
+            <!-- Map Section -->
+            {% if post.latitude and post.longitude %}
+            <div class="map-container mt-3">
+                <h6>Location Map</h6>
+                <div id="map-{{ forloop.counter }}" style="width: 100%; height: 300px;"></div>
+                <script>
+                    function initMap{{ forloop.counter }}() {
+                        var location = { lat: {{ post.latitude }}, lng: {{ post.longitude }} };
+                        var map = new google.maps.Map(document.getElementById("map-{{ forloop.counter }}"), {
+                            zoom: 10,
+                            center: location
+                        });
+                        new google.maps.Marker({
+                            position: location,
+                            map: map
+                        });
+                    }
+                    // Load the map after the API script is loaded
+                    google.maps.event.addDomListener(window, 'load', initMap{{ forloop.counter }});
+                </script>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Comment Section -->
+        <div class="card-footer">
+            <h6>Comments</h6>
+            {% for comment in post.comments.all %}
+                <div class="comment">
+                    <strong>{{ comment.user.username }}:</strong> {{ comment.text }}
+                    <span class="text-muted small">{{ comment.date_commented|date:"M j, Y H:i" }}</span>
+                </div>
+            {% empty %}
+                <p>No comments yet. Be the first to comment!</p>
+            {% endfor %}
+
+            {% if user.is_authenticated %}
+                <form action="#" method="post" class="mt-2">
+                    {% csrf_token %}
+                    <textarea name="text" rows="2" class="form-control" placeholder="Add a comment..." required></textarea>
+                    <button type="submit" class="btn btn-primary mt-2">Post Comment</button>
+                </form>
+            {% else %}
+                <p><a href="{% url 'login' %}">Log in</a> to comment on this post.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+        <p class="no-posts">No posts available.</p>
+    {% endfor %}
+</div>
+
+<!-- Recent Posts Section -->
+<div class="recent-posts mt-4">
+    <h2>Recent Posts from Chairmen</h2>
+    {% for post in recent_posts %}
+        <div class="post-card">
+            <h3>{{ post.title }}</h3>
+            <p>{{ post.description|truncatewords:30 }}</p>
+            <small>Posted on {{ post.date_posted|date:"F j, Y" }}</small>
+        </div>
+    {% empty %}
+        <p>No recent posts available.</p>
+    {% endfor %}
+</div>
+{% endblock %}
+
+<!-- Load Google Maps API -->
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY"></script>

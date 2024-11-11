@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Edit Your Profile</h2>
+
+    <div class="card p-4 shadow rounded-lg border-0">
+        <form method="POST" enctype="multipart/form-data" class="d-flex flex-column align-items-center">
+            {% csrf_token %}
+            
+            <div class="form-group mb-3 w-75">
+                {{ form.profile_picture.label_tag }}<br>
+                {{ form.profile_picture }}
+                {% if form.profile_picture.help_text %}
+                    <small class="form-text text-muted">{{ form.profile_picture.help_text }}</small>
+                {% endif %}
+            </div>
+
+            <div class="form-group mb-3 w-75">
+                {{ form.bio.label_tag }}
+                {{ form.bio }}
+            </div>
+
+            <div class="form-row w-75">
+                <div class="form-group col-md-6 mb-3">
+                    {{ form.state.label_tag }}
+                    {{ form.state }}
+                </div>
+                <div class="form-group col-md-6 mb-3">
+                    {{ form.local_government.label_tag }}
+                    {{ form.local_government }}
+                </div>
+            </div>
+
+            <div class="form-group mb-3 w-75">
+                {{ form.phone_number.label_tag }}
+                {{ form.phone_number }}
+            </div>
+
+            <div class="form-group mb-3 w-75">
+                {{ form.email.label_tag }}
+                {{ form.email }}
+            </div>
+
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-primary btn-lg px-5">Save Changes</button>
+                <a href="{% url 'chairman_profile' %}" class="btn btn-secondary btn-lg px-5 ml-2">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+<style>
+/* Improved Edit Profile Page Styles */
+.container {
+    max-width: 700px;
+    margin: auto;
+    padding: 20px;
+    font-family: 'Arial', sans-serif;
+    text-align: center; /* Center text in the container */
+}
+
+.card {
+    background-color: #f8f9fa;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+    color: #343a40;
+    font-weight: bold;
+    font-size: 2rem;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+    width: 100%; /* Make sure form group elements span full width */
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.form-control {
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 1rem;
+}
+
+button {
+    font-size: 1rem;
+    padding: 10px 20px;
+    border-radius: 30px;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+    color: white;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+.shadow {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center align all form elements */
+}
+
+.w-75 {
+    width: 75%; /* Set a width to form elements for central alignment */
+}
+</style>
