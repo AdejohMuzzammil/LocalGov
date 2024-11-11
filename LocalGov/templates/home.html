@@ -3,6 +3,9 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
+<!-- Include Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
 <h1 class="text-center">Local Government Works</h1>
 <p class="text-center">View recent posts by chairmen from different states and local governments in Nigeria</p>
 
@@ -49,7 +52,7 @@
                         });
                     }
                     // Load the map after the API script is loaded
-                    google.maps.event.addDomListener(window, 'load', initMap{{ forloop.counter }});
+                    google.maps.event.addDomListener(window, 'load', initMap{{ forloop.counter }} );
                 </script>
             </div>
             {% endif %}
@@ -62,13 +65,41 @@
                 <div class="comment">
                     <strong>{{ comment.user.username }}:</strong> {{ comment.text }}
                     <span class="text-muted small">{{ comment.date_commented|date:"M j, Y H:i" }}</span>
+        
+                    <!-- Like/Dislike buttons with counts -->
+                    <button class="btn btn-sm btn-success" onclick="likeComment({{ comment.id }})">
+                        <i class="fa fa-thumbs-up"></i> {{ comment.likes.count }} <!-- Display total likes -->
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="dislikeComment({{ comment.id }})">
+                        <i class="fa fa-thumbs-down"></i> {{ comment.dislikes.count }} <!-- Display total dislikes -->
+                    </button>
+        
+                    <!-- Reply form button with Font Awesome icon -->
+                    <button class="btn btn-sm btn-info" data-toggle="collapse" data-target="#reply-form-{{ comment.id }}">
+                        <i class="fa fa-reply"></i> Reply
+                    </button>
+        
+                    <div id="reply-form-{{ comment.id }}" class="collapse">
+                        <form action="{% url 'reply_comment' post.id comment.id %}" method="post">
+                            {% csrf_token %}
+                            <textarea name="text" rows="2" class="form-control" placeholder="Write your reply..." required></textarea>
+                            <button type="submit" class="btn btn-primary mt-2">Post Reply</button>
+                        </form>
+                    </div>
+        
+                    {% for reply in comment.replies.all %}
+                        <div class="reply ml-4">
+                            <strong>{{ reply.user.username }}:</strong> {{ reply.text }}
+                            <span class="text-muted small">{{ reply.date_commented|date:"M j, Y H:i" }}</span>
+                        </div>
+                    {% endfor %}
                 </div>
             {% empty %}
                 <p>No comments yet. Be the first to comment!</p>
             {% endfor %}
-
+        
             {% if user.is_authenticated %}
-                <form action="#" method="post" class="mt-2">
+                <form action="{% url 'add_comment' post.id %}" method="post" class="mt-2">
                     {% csrf_token %}
                     <textarea name="text" rows="2" class="form-control" placeholder="Add a comment..." required></textarea>
                     <button type="submit" class="btn btn-primary mt-2">Post Comment</button>
@@ -77,6 +108,7 @@
                 <p><a href="{% url 'login' %}">Log in</a> to comment on this post.</p>
             {% endif %}
         </div>
+
     </div>
     {% empty %}
         <p class="no-posts">No posts available.</p>
@@ -96,7 +128,73 @@
         <p>No recent posts available.</p>
     {% endfor %}
 </div>
-{% endblock %}
 
 <!-- Load Google Maps API -->
 <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY"></script>
+
+<script>
+    function likeComment(commentId) {
+        fetch(`/like-comment/${commentId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error('Failed to like the comment');
+            }
+        })
+        .then(data => {
+            if (data.status === 'added') {
+                console.log('Like added');
+            } else if (data.status === 'removed') {
+                console.log('Like removed');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function dislikeComment(commentId) {
+        fetch(`/dislike-comment/${commentId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error('Failed to dislike the comment');
+            }
+        })
+        .then(data => {
+            if (data.status === 'added') {
+                console.log('Dislike added');
+            } else if (data.status === 'removed') {
+                console.log('Dislike removed');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+
+{% endblock %}

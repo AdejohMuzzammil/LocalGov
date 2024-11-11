@@ -25,6 +25,8 @@ class ChairmanProfile(models.Model):
     # Updated related_name attributes to avoid clashes
     state = models.ForeignKey(State, related_name='chairman_profiles', on_delete=models.CASCADE)
     local_government = models.ForeignKey(LocalGovernment, related_name='chairman_profiles', on_delete=models.CASCADE)
+    tenure_start_date = models.DateField(blank=True, null=True)
+    tenure_end_date = models.DateField(blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     email = models.EmailField()
 
@@ -55,6 +57,9 @@ class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField()
     date_commented = models.DateTimeField(auto_now_add=True)
+    parent_comment = models.ForeignKey('self', related_name='replies', null=True, blank=True, on_delete=models.CASCADE)  
+    like_count = models.ManyToManyField(User, related_name='liked_comments', blank=True)  
+    dislike_count = models.ManyToManyField(User, related_name='disliked_comments', blank=True)  
 
     def __str__(self):
         return f'Comment by {self.user.username} on {self.post.title}'
