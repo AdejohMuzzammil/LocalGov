@@ -1,5 +1,41 @@
 from django import forms
-from .models import *
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.models import User
+from . models import *
+
+
+class CustomUserCreationForm(UserCreationForm):
+    profile_type = forms.ChoiceField(
+        choices=UserProfile.USER_TYPE_CHOICES,
+        widget=forms.RadioSelect,
+        label="Profile Type"
+    )
+
+    class Meta:
+        model = User
+        fields = ['username', 'first_name', 'last_name', 'email', 'password1', 'password2', 'profile_type']
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        profile_type = self.cleaned_data['profile_type']
+        
+        if commit:
+            user.save()
+            # Create or update UserProfile instance
+            user_profile = UserProfile.objects.create(user=user, profile_type=profile_type)
+            
+            # Create ChairmanProfile if the user is a chairman
+            if profile_type == 'chairman':
+                ChairmanProfile.objects.create(user=user)  # Ensure this creates the profile for the chairman
+            
+        return user
+    
+
+class LoginForm(AuthenticationForm):
+    class Meta:
+        model = User
+        fields = ['username', 'password']
+
 class ChairmanProfileForm(forms.ModelForm):
     class Meta:
         model = ChairmanProfile

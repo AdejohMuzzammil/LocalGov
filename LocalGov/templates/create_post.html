@@ -96,6 +96,14 @@ function updateCoordinates() {
     }
 }
 
+var message = document.getElementById('warning-message');
+    if (message) {
+        // Display the message for 3 seconds
+        setTimeout(function() {
+            message.style.display = 'none';  
+        }, 3000);  
+    }
+
 // Add event listener to location input field
 document.getElementById('id_location').addEventListener('blur', updateCoordinates);
 </script>
@@ -133,5 +141,14 @@ document.getElementById('id_location').addEventListener('blur', updateCoordinate
     padding: 10px 20px;
     font-size: 1em;
     border-radius: 5px;
+}
+
+#warning-message {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    border: 1px solid #f5c6cb;
 }
 </style>

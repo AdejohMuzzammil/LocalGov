@@ -4,6 +4,8 @@
         "asgiref",
         "bootoast",
         "csrftoken",
-        "forloop"
+        "forloop",
+        "Localgov",
+        "signin"
     ]
 }

@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up | NigeriaLocalGov{% endblock %}
+
+{% block content %}
+<style>
+    /* General Styles for the Signup Container */
+    .signup-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 80vh;
+        background-color: #ffffff; /* White color for the background */
+        padding: 2rem;
+    }
+
+    /* Styles for the Card */
+    .signup-card {
+        border: 2px solid #008751; /* Green border color */
+        border-radius: 10px;
+        width: 100%;
+        max-width: 500px;
+        background-color: #ffffff; /* White background for the card */
+        box-shadow: 0px 4px 15px rgba(0, 135, 81, 0.2); /* Subtle green shadow */
+    }
+
+    /* Heading Style */
+    .signup-heading {
+        color: #008751; /* Green color for the heading */
+        font-weight: bold;
+    }
+
+    /* Form Field Styles */
+    .form-group label {
+        color: #008751; /* Green color for labels */
+        font-weight: bold;
+    }
+
+    .form-control {
+        border: 1px solid #008751; /* Green border for input fields */
+        border-radius: 5px;
+        padding: 0.5rem;
+    }
+
+    .form-control:focus {
+        border-color: #004a2f; /* Darker green on focus */
+        box-shadow: 0 0 5px rgba(0, 135, 81, 0.5);
+    }
+
+    /* Button Styles */
+    .signup-btn {
+        background-color: #008751; /* Green background for button */
+        color: #ffffff; /* White text for button */
+        border: none;
+        padding: 0.5rem 1.5rem;
+        border-radius: 5px;
+        font-size: 1rem;
+        transition: background-color 0.3s;
+    }
+
+    .signup-btn:hover {
+        background-color: #004a2f; /* Darker green on hover */
+    }
+
+    /* Responsive Styles */
+    @media (max-width: 768px) {
+        .signup-container {
+            padding: 1rem;
+        }
+
+        .signup-card {
+            padding: 1.5rem;
+        }
+
+        .signup-heading {
+            font-size: 1.5rem;
+        }
+
+        .form-control {
+            font-size: 0.9rem;
+        }
+
+        .signup-btn {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .signup-heading {
+            font-size: 1.25rem;
+        }
+    }
+</style>
+
+<div class="signup-container">
+    <div class="card signup-card">
+        <div class="card-header text-center">
+            <h3 class="signup-heading">Sign Up</h3>
+        </div>
+        <div class="card-body">
+
+            <form method="POST" action="{% url 'signup' %}">
+                {% csrf_token %}
+            
+                <!-- Username Field -->
+                <div class="form-group">
+                    <label for="username">First_Name</label>
+                    <input type="text" id="first_name" name="first_name" class="form-control" placeholder="Enter your first name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="username">Last_Name</label>
+                    <input type="text" id="last_name" name="last_name" class="form-control" placeholder="Enter your last name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" class="form-control" placeholder="Enter your username" required>
+                </div>
+            
+                <!-- Email Field -->
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" class="form-control" placeholder="Enter your email" required>
+                </div>
+            
+                <!-- Password Field -->
+                <div class="form-group">
+                    <label for="password1">Password</label>
+                    <input type="password" id="password1" name="password1" class="form-control" placeholder="Enter your password" required>
+                </div>
+            
+                <!-- Confirm Password Field -->
+                <div class="form-group">
+                    <label for="password2">Confirm Password</label>
+                    <input type="password" id="password2" name="password2" class="form-control" placeholder="Confirm your password" required>
+                </div>
+            
+                <!-- Profile Type Field -->
+                <div class="form-group">
+                    <label for="profile_type">Profile Type</label>
+                    <select id="profile_type" name="profile_type" class="form-control" required>
+                        <option value="regular">Regular User</option>
+                        <option value="chairman">Local Government Chairman</option>
+                    </select>
+                </div>
+            
+                <!-- Submit Button -->
+                <div class="text-center">
+                    <button type="submit" class="btn signup-btn">Sign Up</button>
+                </div>
+            </form>
+            
+
+            <div class="text-center mt-3">
+                <p>Already have an account? <a href="{% url 'login' %}" class="text-success">Login</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
