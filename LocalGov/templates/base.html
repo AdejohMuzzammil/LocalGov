@@ -3,6 +3,7 @@
 <head>
     {% load static %}
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1"> <!-- Add this for responsive design -->
     <title>{% block title %}NigeriaLocalGov{% endblock %}</title>
     
     <!-- Bootstrap CSS -->
@@ -24,6 +25,33 @@
         .navbar-nav {
             margin-left: auto; /* Pushes the navbar content to the right */
         }
+
+        /* Custom styles to ensure the navbar is more responsive */
+        @media (max-width: 768px) {
+            .navbar-nav {
+                text-align: center; /* Center nav items on smaller screens */
+            }
+            .navbar-brand {
+                font-size: 1.2rem; /* Adjust the brand size for smaller screens */
+            }
+        }
+
+        /* Footer responsiveness */
+        footer {
+            text-align: center;
+            margin-top: 5rem;
+            margin-bottom: 5rem;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        /* Additional custom styles if needed */
+        @media (max-width: 576px) {
+            footer {
+                font-size: 0.9rem; /* Make footer text smaller on very small screens */
+            }
+        }
     </style>
 </head>
 <body>
@@ -42,13 +70,14 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'chairman_profile' %}">Profile</a>
                     </li>
-                    <li class="nav-item">
-                        <!-- Logout Button -->
-                        <form action="{% url 'logout' %}" method="post" style="display: inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-outline-danger">Logout</button>
-                        </form>
-                    </li>
+
+                    <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-link nav-link" style="padding: 0; text-decoration: none; color: inherit;">
+                            Logout
+                        </button>
+                    </form>
+
                 {% else %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'login' %}">Login</a>
@@ -65,7 +94,7 @@
     <div class="container mt-4">
         {% block content %}
         {% endblock %}
-        <footer style="text-align: center; margin-top: 5rem; margin-bottom: 5rem; left: 0; bottom: 0; width: 100%;">
+        <footer>
             <b>&copy; NigeriaLocalGov.com</b>
         </footer>
     </div>
@@ -87,9 +116,9 @@
       // Function to show the Bootoast message
       function toast(message, type) {
         bootoast.toast({
-          position: 'Top',  // Position of the toast
-          message: message, // Message content
-          type: type,       // Type of message (success, error, etc.)
+          position: 'Top',  
+          message: message, 
+          type: type,       
         });
       }
     </script>

@@ -1,7 +1,10 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
+from django.db import IntegrityError
 from . models import *
+
+
 
 
 class CustomUserCreationForm(UserCreationForm):
@@ -18,17 +21,21 @@ class CustomUserCreationForm(UserCreationForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         profile_type = self.cleaned_data['profile_type']
-        
+
         if commit:
-            user.save()
-            # Create or update UserProfile instance
-            user_profile = UserProfile.objects.create(user=user, profile_type=profile_type)
-            
-            # Create ChairmanProfile if the user is a chairman
-            if profile_type == 'chairman':
-                ChairmanProfile.objects.create(user=user)  # Ensure this creates the profile for the chairman
-            
+            try:
+                user.save()
+                if not UserProfile.objects.filter(user=user).exists():
+                    user_profile = UserProfile.objects.create(user=user, profile_type=profile_type)
+                
+                if profile_type == 'chairman' and not ChairmanProfile.objects.filter(user=user).exists():
+                    ChairmanProfile.objects.create(user=user)
+            except IntegrityError as e:
+                user.delete()  
+                raise IntegrityError(f"Error creating profiles: {e}")
+        
         return user
+
     
 
 class LoginForm(AuthenticationForm):
@@ -53,6 +60,7 @@ class ChairmanProfileForm(forms.ModelForm):
             'tenure_start_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'tenure_end_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }
+
 
 
 class PostForm(forms.ModelForm):
@@ -82,16 +90,28 @@ class PostForm(forms.ModelForm):
         }
 
 
+# class CommentForm(forms.ModelForm):
+#     class Meta:
+#         model = Comment
+#         fields = ['text'] 
+
+# class ReplyForm(forms.ModelForm):
+#     class Meta:
+#         model = Comment
+#         fields = ['text']
+    
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self.fields['text'].widget.attrs.update({'placeholder': 'Reply to this comment', 'class': 'form-control'})
+
+
 class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
-        fields = ['text'] 
+        fields = ['text']
 
 class ReplyForm(forms.ModelForm):
     class Meta:
-        model = Comment
+        model = Reply
         fields = ['text']
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['text'].widget.attrs.update({'placeholder': 'Reply to this comment', 'class': 'form-control'})
+        

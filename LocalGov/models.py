@@ -37,8 +37,20 @@ class ChairmanProfile(models.Model):
     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
     # Updated related_name attributes to avoid clashes
-    state = models.ForeignKey(State, related_name='chairman_profiles', on_delete=models.CASCADE)
-    local_government = models.ForeignKey(LocalGovernment, related_name='chairman_profiles', on_delete=models.CASCADE)
+    state = models.ForeignKey(
+        State, 
+        related_name='chairman_profiles', 
+        on_delete=models.CASCADE,
+        null=True,  
+        blank=True  
+    )
+    local_government = models.ForeignKey(
+        LocalGovernment, 
+        related_name='chairman_profiles', 
+        on_delete=models.SET_NULL,  
+        null=True, 
+        blank=True  
+    )
     tenure_start_date = models.DateField(blank=True, null=True)
     tenure_end_date = models.DateField(blank=True, null=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
@@ -46,6 +58,7 @@ class ChairmanProfile(models.Model):
 
     def __str__(self):
         return self.user.username
+
     
 
 class Post(models.Model):
@@ -71,12 +84,27 @@ class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField()
     date_commented = models.DateTimeField(auto_now_add=True)
-    parent_comment = models.ForeignKey('self', related_name='replies', null=True, blank=True, on_delete=models.CASCADE)  
-    like_count = models.ManyToManyField(User, related_name='liked_comments', blank=True)  
-    dislike_count = models.ManyToManyField(User, related_name='disliked_comments', blank=True)  
+    like_count = models.ManyToManyField(User, related_name='liked_comments', blank=True)
+    dislike_count = models.ManyToManyField(User, related_name='disliked_comments', blank=True)
 
     def __str__(self):
         return f'Comment by {self.user.username} on {self.post.title}'
+
+
+class Reply(models.Model):
+    comment = models.ForeignKey(Comment, related_name='replies', on_delete=models.CASCADE, null=True, blank=True)
+    parent = models.ForeignKey('self', related_name='child_replies', on_delete=models.CASCADE, null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    text = models.TextField()
+    date_commented = models.DateTimeField(auto_now_add=True)
+    like_count = models.ManyToManyField(User, related_name='liked_replies', blank=True)
+    dislike_count = models.ManyToManyField(User, related_name='disliked_replies', blank=True)
+
+    class Meta:
+        verbose_name_plural = "Replies"
+
+    def __str__(self):
+        return f'Reply by {self.user.username} to {"comment" if not self.parent else "reply"} by {self.comment.user.username if not self.parent else self.parent.user.username}'
 
 
 # migrations/0002_populate_states.py

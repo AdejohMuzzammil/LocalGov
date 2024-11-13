@@ -12,11 +12,15 @@ urlpatterns = [
     path('create_chairman_profile/', views.create_chairman_profile, name='create_chairman_profile'),
     path('edit-profile/', views.edit_profile, name='edit-profile'),
     path('recent-posts/', views.recent_posts_view, name='recent_posts'),
-    #path('add-comment/<int:post_id>/', views.add_comment, name='add_comment'),
+
     path('post/<int:post_id>/add-comment/', views.add_comment, name='add_comment'),
     path('post/<int:post_id>/comment/<int:comment_id>/reply/', views.reply_comment, name='reply_comment'),
+    path('post/<int:post_id>/comment/<int:comment_id>/reply/<int:reply_id>/', views.reply_comment, name='reply_to_reply'),
+
     path('like-comment/<int:comment_id>/', views.like_comment, name='like_comment'),
     path('dislike-comment/<int:comment_id>/', views.dislike_comment, name='dislike_comment'),
+    path('like-reply/<int:reply_id>/', views.like_reply, name='like_reply'),
+    path('dislike-reply/<int:reply_id>/', views.dislike_reply, name='dislike_reply'),
 
     #Authentication
     path('signup/', views.signup_view, name='signup'),

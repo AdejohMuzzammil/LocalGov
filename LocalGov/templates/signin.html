@@ -9,48 +9,50 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        min-height: 80vh;
-        background-color: #ffffff; /* White color for the background */
-        padding: 2rem;
+        min-height: 100vh; /* Take at least the full height of the screen */
+        background-color: #ffffff;
+        padding: 1rem; /* Added padding for spacing */
     }
 
     /* Styles for the Card */
     .login-card {
         border: 2px solid #008751; /* Green border color */
         border-radius: 10px;
-        width: 100%;
-        max-width: 500px;
-        background-color: #ffffff; /* White background for the card */
-        box-shadow: 0px 4px 15px rgba(0, 135, 81, 0.2); /* Subtle green shadow */
+        width: 100%; /* Ensures the card width is dynamic */
+        max-width: 600px; /* Set max width of the card */
+        background-color: #ffffff; /* White background */
+        box-shadow: 0px 4px 15px rgba(0, 135, 81, 0.2); /* Subtle shadow */
+        padding: 2rem;
     }
 
     /* Heading Style */
     .login-heading {
-        color: #008751; /* Green color for the heading */
+        color: #008751;
         font-weight: bold;
+        font-size: 2rem; /* Adjust size for heading */
     }
 
     /* Form Field Styles */
     .form-group label {
-        color: #008751; /* Green color for labels */
+        color: #008751;
         font-weight: bold;
     }
 
     .form-control {
-        border: 1px solid #008751; /* Green border for input fields */
+        border: 1px solid #008751;
         border-radius: 5px;
         padding: 0.5rem;
     }
 
     .form-control:focus {
-        border-color: #004a2f; /* Darker green on focus */
+        border-color: #004a2f;
         box-shadow: 0 0 5px rgba(0, 135, 81, 0.5);
     }
 
     /* Button Styles */
     .login-btn {
-        background-color: #008751; /* Green background for button */
-        color: #ffffff; /* White text for button */
+        background-color: #008751;
+        color: #ffffff;
         border: none;
         padding: 0.5rem 1.5rem;
         border-radius: 5px;
@@ -59,11 +61,11 @@
     }
 
     .login-btn:hover {
-        background-color: #004a2f; /* Darker green on hover */
+        background-color: #004a2f;
     }
 
-    /* Responsive Styles */
-    @media (max-width: 768px) {
+    /* Responsive Styles for Mobile and Tablet */
+    @media (max-width: 1024px) {
         .login-container {
             padding: 1rem;
         }
@@ -85,9 +87,23 @@
         }
     }
 
-    @media (max-width: 576px) {
+    @media (max-width: 768px) {
+        .login-card {
+            padding: 1rem;
+        }
+
         .login-heading {
             font-size: 1.25rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .login-heading {
+            font-size: 1.1rem;
+        }
+
+        .form-control {
+            font-size: 0.85rem;
         }
     }
 </style>
