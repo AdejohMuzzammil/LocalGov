@@ -99,3 +99,9 @@ p {
     color: #777;
     font-size: 0.9em;
 }
+
+.post-video {
+    width: 100%;
+    height: 250px; 
+    object-fit: cover; 
+}

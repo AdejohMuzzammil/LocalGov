@@ -2,6 +2,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync, sync_to_async
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 from django.core.exceptions import ValidationError
 from django.contrib import messages
@@ -152,231 +153,113 @@ def create_post(request):
     return render(request, 'create_post.html', {'form': form})
 
 
-
 @login_required
 def recent_posts_view(request):
     posts = Post.objects.order_by('-created_at')[:5]  
     return render(request, 'recent_posts.html', {'posts': posts})
 
 
+
+@login_required
+def post_detail(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    return redirect(f"{reverse('home')}?post_id={post.id}")
+
+
+
 @login_required
 def add_comment(request, post_id):
-    post = get_object_or_404(Post, id=post_id)
+    try:
+        post = Post.objects.get(id=post_id)
+    except Post.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Post not found'}, status=404)
 
-    if not request.user.is_authenticated:
-        messages.error(request, "You must be logged in to comment.")
-        return redirect('login')
-
-    if request.method == 'POST':
-        form = CommentForm(request.POST)
-        if form.is_valid():
-            text = form.cleaned_data['text']
+    if request.method == "POST":
+        text = request.POST.get('text')
+        if text:
             comment = Comment.objects.create(post=post, user=request.user, text=text)
-            messages.success(request, 'Your comment has been posted successfully!')
-            return redirect('home')
-
-    messages.error(request, "Failed to add your comment. Please try again.")
-    return redirect('home')
-
-
-@login_required
-def reply_comment(request, post_id, comment_id, reply_id=None):
-    # Debugging: Print incoming IDs
-    print(f"Received post_id: {post_id}, comment_id: {comment_id}, reply_id: {reply_id}")
-
-    post = get_object_or_404(Post, id=post_id)
-    comment = get_object_or_404(Comment, id=comment_id, post=post)  # Check if the comment belongs to the post
-
-    parent_reply = None
-    if reply_id:
-        parent_reply = get_object_or_404(Reply, id=reply_id)
-
-    if request.method == 'POST':
-        form = ReplyForm(request.POST)
-        if form.is_valid():
-            text = form.cleaned_data['text']
-            reply = Reply.objects.create(
-                comment=comment,
-                parent=parent_reply,
-                user=request.user,
-                text=text
-            )
-            messages.success(request, 'Your reply has been posted successfully!')
-
-            recipient = parent_reply.user if parent_reply else comment.user
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                f'user_{recipient.id}',
-                {
-                    'type': 'comment.notification',
-                    'message': f'Your {"reply" if parent_reply else "comment"} has a new reply from {request.user.username}!',
-                }
-            )
-            return redirect('home')
-
-    messages.error(request, "Failed to add your reply. Please try again.")
-    return redirect('home')
+            return JsonResponse({
+                'status': 'success',
+                'comment_id': comment.id,
+                'username': comment.user.username,
+                'text': comment.text,
+                'date': comment.date_commented.strftime("%b %d, %Y")
+            })
+    return redirect('post_detail', post_id=post_id)
 
 
 @login_required
-@require_POST
+def add_reply(request, comment_id):
+    comment = Comment.objects.get(id=comment_id)
+    if request.method == "POST":
+        text = request.POST.get('text')
+        if text:
+            reply = Reply.objects.create(comment=comment, user=request.user, text=text)
+            return JsonResponse({'status': 'success', 'reply_id': reply.id, 'username': reply.user.username, 'text': reply.text, 'date': reply.date_commented.strftime("%b %d, %Y")})
+    return redirect('post_detail', post_id=comment.post.id)
+
+
+@login_required
 def like_comment(request, comment_id):
-    try:
-        # Retrieve the comment
-        comment = Comment.objects.get(id=comment_id)
-        user = request.user
-
-        # Handle like logic
-        if user in comment.like_count.all():
-            comment.like_count.remove(user)
-            status = 'removed'
-        else:
-            comment.like_count.add(user)
-            status = 'added'
-            # If the user had previously disliked the comment, remove the dislike
-            if user in comment.dislike_count.all():
-                comment.dislike_count.remove(user)
-
+    comment = Comment.objects.get(id=comment_id)
+    if request.user not in comment.like_count.all():
+        comment.like_count.add(request.user)
+        comment.dislike_count.remove(request.user)  # Remove from dislikes if previously disliked
         comment.save()
-
-        # Send live notification
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f'user_{comment.user.id}',
-            {'type': 'comment.notification', 'message': f'Your comment was {status} by {user.username}!'}
-        )
-
-        return JsonResponse({
-            'status': status,
-            'like_count': comment.like_count.count(),
-            'dislike_count': comment.dislike_count.count()
-        })
-    except Comment.DoesNotExist:
-        return JsonResponse({'error': 'Comment not found'}, status=404)
-    
+    return JsonResponse({'status': 'success', 'like_count': comment.like_count.count()})
 
 @login_required
-@require_POST
-def dislike_comment(request, comment_id):
-    try:
-        # Retrieve the comment
-        comment = Comment.objects.get(id=comment_id)
-        user = request.user
-
-        # Handle dislike logic
-        if user in comment.dislike_count.all():
-            comment.dislike_count.remove(user)
-            status = 'removed'
-        else:
-            comment.dislike_count.add(user)
-            status = 'added'
-            if user in comment.like_count.all():
-                comment.like_count.remove(user)
-
-        comment.save()
-
-        # Send live notification
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f'user_{comment.user.id}', 
-            {'type': 'comment.notification', 'message': f'Your comment was {status} by {user.username}!'}
-        )
-
-        return JsonResponse({
-            'status': status,
-            'like_count': comment.like_count.count(),
-            'dislike_count': comment.dislike_count.count()
-        })
-    except Comment.DoesNotExist:
-        return JsonResponse({'error': 'Comment not found'}, status=404)
-    
-
-
-@login_required
-@require_POST
 def like_reply(request, reply_id):
-    try:
-        reply = Reply.objects.get(id=reply_id)
-        user = request.user
-
-        # Handle liking logic
-        if user in reply.like_count.all():
-            reply.like_count.remove(user)
-            status = 'removed'
-        else:
-            reply.like_count.add(user)
-            status = 'added'
-            if user in reply.dislike_count.all():
-                reply.dislike_count.remove(user)
-
+    reply = Reply.objects.get(id=reply_id)
+    if request.user not in reply.like_count.all():
+        reply.like_count.add(request.user)
+        reply.dislike_count.remove(request.user)  # Remove from dislikes if previously disliked
         reply.save()
-
-        # Send real-time notification
-        try:
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                f'user_{reply.user.id}',
-                {
-                    'type': 'comment.notification',
-                    'message': f'Your reply was {status} by {user.username}!',
-                }
-            )
-        except Exception as e:
-            print(f"WebSocket notification error: {e}")
-
-        return JsonResponse({
-            'status': status,
-            'like_count': reply.like_count.count(),
-            'dislike_count': reply.dislike_count.count()
-        })
-
-    except Reply.DoesNotExist:
-        return JsonResponse({'error': 'Reply not found'}, status=404)
-    except Exception as e:
-        print(f"Error in like_reply view: {e}")
-        return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+    return JsonResponse({'status': 'success', 'like_count': reply.like_count.count()})
     
 
+
 @login_required
-@require_POST
+def dislike_comment(request, comment_id):
+    comment = Comment.objects.get(id=comment_id)
+    if request.user not in comment.dislike_count.all():
+        comment.dislike_count.add(request.user)
+        comment.like_count.remove(request.user)  # Remove from likes if previously liked
+        comment.save()
+    return JsonResponse({'status': 'success', 'dislike_count': comment.dislike_count.count()})
+
+@login_required
 def dislike_reply(request, reply_id):
-    try:
-        reply = Reply.objects.get(id=reply_id)
-        user = request.user
-
-        # Handle disliking logic
-        if user in reply.dislike_count.all():
-            reply.dislike_count.remove(user)
-            status = 'removed'
-        else:
-            reply.dislike_count.add(user)
-            status = 'added'
-            if user in reply.like_count.all():
-                reply.like_count.remove(user)
-
+    reply = Reply.objects.get(id=reply_id)
+    if request.user not in reply.dislike_count.all():
+        reply.dislike_count.add(request.user)
+        reply.like_count.remove(request.user)  # Remove from likes if previously liked
         reply.save()
+    return JsonResponse({'status': 'success', 'dislike_count': reply.dislike_count.count()})
 
-        # Send real-time notification
+
+def delete_comment(request, comment_id):
+    if request.method == 'POST':
         try:
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                f'user_{reply.user.id}',
-                {
-                    'type': 'comment.notification',
-                    'message': f'Your reply was {status} by {user.username}!',
-                }
-            )
-        except Exception as e:
-            print(f"WebSocket notification error: {e}")
+            comment = Comment.objects.get(id=comment_id)
+            comment.delete()
+            return JsonResponse({'status': 'success'})
+        except Comment.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Comment not found'}, status=404)
 
-        return JsonResponse({
-            'status': status,
-            'like_count': reply.like_count.count(),
-            'dislike_count': reply.dislike_count.count()
-        })
 
-    except Reply.DoesNotExist:
-        return JsonResponse({'error': 'Reply not found'}, status=404)
-    except Exception as e:
-        print(f"Error in dislike_reply view: {e}")
-        return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+@login_required
+def delete_reply(request, reply_id):
+    reply = Reply.objects.get(id=reply_id)
+    if reply.user == request.user:
+        reply.delete()
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'failure', 'message': 'You can only delete your own reply.'})
+
+
+def load_comments(request, post_id):
+    post = Post.objects.get(id=post_id)
+    comments = post.comments.all().order_by('-date_commented')
+    context = {'comments': comments}
+    comments_html = render_to_string('comments_list.html', context)
+    return JsonResponse({'status': 'success', 'comments_html': comments_html})

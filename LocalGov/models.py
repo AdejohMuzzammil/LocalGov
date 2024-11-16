@@ -100,11 +100,8 @@ class Reply(models.Model):
     like_count = models.ManyToManyField(User, related_name='liked_replies', blank=True)
     dislike_count = models.ManyToManyField(User, related_name='disliked_replies', blank=True)
 
-    class Meta:
-        verbose_name_plural = "Replies"
-
     def __str__(self):
-        return f'Reply by {self.user.username} to {"comment" if not self.parent else "reply"} by {self.comment.user.username if not self.parent else self.parent.user.username}'
+        return f'Reply by {self.user.username} on {self.comment.text}'
 
 
 # migrations/0002_populate_states.py

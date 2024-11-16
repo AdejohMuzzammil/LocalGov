@@ -3,6 +3,7 @@
         "asgi",
         "asgiref",
         "bootoast",
+        "csrfmiddlewaretoken",
         "csrftoken",
         "forloop",
         "Localgov",
