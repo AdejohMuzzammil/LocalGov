@@ -34,11 +34,11 @@
             {% if post.latitude and post.longitude %}
             <div class="map-container mt-3">
                 <h6>Location Map</h6>
-                <div id="map-{{ forloop.counter }}" style="width: 100%; height: 300px;"></div>
+                <div id="map-{{ post.id }}" style="width: 100%; height: 300px;"></div>
                 <script>
-                    function initMap{{ forloop.counter }}() {
+                    function initMap{{ post.id }}() {
                         var location = { lat: {{ post.latitude }}, lng: {{ post.longitude }} };
-                        var map = new google.maps.Map(document.getElementById("map-{{ forloop.counter }}"), {
+                        var map = new google.maps.Map(document.getElementById("map-{{ post.id }}"), {
                             zoom: 10,
                             center: location
                         });
@@ -47,7 +47,7 @@
                             map: map
                         });
                     }
-                    google.maps.event.addDomListener(window, 'load', initMap{{ forloop.counter }});
+                    google.maps.event.addDomListener(window, 'load', initMap{{ post.id }});
                 </script>
             </div>
             {% endif %}
@@ -64,49 +64,79 @@
                 <h6>Comments</h6>
                 <div id="comments-container-{{ post.id }}">
                     {% for comment in post.comments.all %}
-                    <div class="comment" id="comment-{{ comment.id }}">
+                    <div class="comment" id="comment-{{ comment.id }}" style="padding-bottom: 10px; margin-bottom: 15px;">
                         <strong>{{ comment.user.username }}</strong>: {{ comment.text }}
-                        <span class="text-muted">{{ comment.date_commented|date:"F j, Y" }}</span>
+                        <span class="text-muted" style="font-size: 0.9em;">{{ comment.date_commented|date:"F j, Y" }}</span>
 
-                        <button onclick="likeComment({{ comment.id }})" style="display: inline-flex; align-items: center; padding: 6px 12px; font-size: 14px; background-color: #28a745; color: white; border-radius: 4px; border: none; cursor: pointer; margin: 5px; transition: background-color 0.3s ease;">
-                            <i class="fas fa-thumbs-up" style="margin-right: 5px;"></i> 
-                        </button>
-                        
-                        <button onclick="dislikeComment({{ comment.id }})" style="display: inline-flex; align-items: center; padding: 6px 12px; font-size: 14px; background-color: #dc3545; color: white; border-radius: 4px; border: none; cursor: pointer; margin: 5px; transition: background-color 0.3s ease;">
-                            <i class="fas fa-thumbs-down" style="margin-right: 5px;"></i> 
-                        </button>
-                        
-                        <button onclick="deleteComment({{ comment.id }})" style="display: inline-flex; align-items: center; padding: 6px 12px; font-size: 14px; background-color: #ffc107; color: black; border-radius: 4px; border: none; cursor: pointer; margin: 5px; transition: background-color 0.3s ease;">
-                            <i class="fas fa-trash" style="margin-right: 5px;"></i> Delete
-                        </button>
+                        <!-- Buttons with Inline CSS for Spacing -->
+                        <div style="margin-top: 10px;">
+                            <button onclick="likeComment({{ comment.id }})" style="background-color: #28a745; color: white; border: none; padding: 5px 10px; font-size: 0.85em; border-radius: 3px; margin-right: 5px;">
+                                <i class="fas fa-thumbs-up"></i> <span class="comment-like-count">{{ comment.like_count.count }}</span>
+                            </button>
 
+                            <button onclick="dislikeComment({{ comment.id }})" style="background-color: #dc3545; color: white; border: none; padding: 5px 10px; font-size: 0.85em; border-radius: 3px; margin-right: 5px;">
+                                <i class="fas fa-thumbs-down"></i> <span class="comment-dislike-count">{{ comment.dislike_count.count }}</span>
+                            </button>
+
+                            <button onclick="deleteComment({{ comment.id }})" style="background-color: #ffc107; color: black; border: none; padding: 5px 10px; font-size: 0.85em; border-radius: 3px; margin-right: 5px;">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+
+                            <!-- Reply Button -->
+                            <button onclick="toggleReplyForm({{ comment.id }})" style="background-color: #6c757d; color: white; border: none; padding: 5px 10px; font-size: 0.85em; border-radius: 3px;">
+                                <i class="fas fa-reply"></i> Reply
+                            </button>
+                        </div>
+
+                        <!-- Comment Reply Form (Initially hidden) -->
+                        <div id="reply-form-{{ comment.id }}" style="display: none; margin-top: 10px;">
+                            <textarea id="reply-text-{{ comment.id }}" style="width: 100%; padding: 5px; font-size: 0.85em;" placeholder="Write a reply..."></textarea>
+                            <button onclick="addReply({{ comment.id }})" style="background-color: #007bff; color: white; border: none; padding: 5px 10px; font-size: 0.85em; border-radius: 3px; margin-top: 5px;">Reply</button>
+                        </div>
 
                         <!-- Replies Section -->
-                        <div class="replies">
+                        <div class="replies" style="margin-top: 10px;">
                             {% for reply in comment.replies.all %}
-                            <div class="reply" id="reply-{{ reply.id }}">
+                            <div class="reply" id="reply-{{ reply.id }}" style="margin-bottom: 10px;">
                                 <strong>{{ reply.user.username }}</strong>: {{ reply.text }}
-                                <span class="text-muted">{{ reply.date_commented|date:"F j, Y" }}</span>
-                                <button onclick="likeReply({{ reply.id }})">Like</button>
-                                <button onclick="dislikeReply({{ reply.id }})">Dislike</button>
-                                <button onclick="deleteReply({{ reply.id }})">Delete</button>
+                                <span class="text-muted" style="font-size: 0.85em;">{{ reply.date_commented|date:"F j, Y" }}</span>
+
+                                <!-- Buttons with Inline CSS for Spacing -->
+                                <div style="margin-top: 5px;">
+                                    <button onclick="likeReply({{ reply.id }})" style="background-color: #28a745; color: white; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px; margin-right: 5px;">
+                                        <i class="fas fa-thumbs-up"></i> <span class="reply-like-count">{{ reply.like_count.count }}</span>
+                                    </button>
+
+                                    <button onclick="dislikeReply({{ reply.id }})" style="background-color: #dc3545; color: white; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px; margin-right: 5px;">
+                                        <i class="fas fa-thumbs-down"></i> <span class="reply-dislike-count">{{ reply.dislike_count.count }}</span>
+                                    </button>
+
+                                    <button onclick="deleteReply({{ reply.id }})" style="background-color: #ffc107; color: black; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px;">
+                                        <i class="fas fa-trash"></i>Delete</button>
+                                </div>
                             </div>
                             {% endfor %}
                         </div>
+
+                        <!-- Separator Line -->
+                        <hr style="border: 1px solid #ddd; margin-top: 15px;">
                     </div>
                     {% endfor %}
                 </div>
 
                 <!-- Comment Input -->
-                <textarea id="comment-text-{{ post.id }}" class="form-control mt-2" placeholder="Write a comment..."></textarea>
-                <button onclick="addComment({{ post.id }})" style="background-color: #007bff; color: white; border: none; border-radius: 4px; padding: 6px 10px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center;">
-                    <i class="fas fa-comment" style="margin-right: 4px;"></i> Comment
+                <textarea id="comment-text-{{ post.id }}" style="width: 100%; padding: 5px; font-size: 0.9em; margin-top: 10px;" placeholder="Write a comment..."></textarea>
+                <button onclick="addComment({{ post.id }})" style="background-color: #007bff; color: white; border: none; padding: 5px 10px; font-size: 0.85em; border-radius: 3px; margin-top: 5px;">
+                    <i class="fas fa-comment"></i> Comment
                 </button>
             </div>
+
+
+            </div>
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
-</div>
+
 
 <script>
     // Function to toggle the visibility of the comments section
@@ -117,6 +147,12 @@
         }
     }
 
+    function toggleReplyForm(commentId) {
+        const replyForm = document.getElementById(`reply-form-${commentId}`);
+        // Toggle the visibility of the reply form
+        replyForm.style.display = replyForm.style.display === 'none' ? 'block' : 'none';
+    }
+    
     // Add Comment
     function addComment(postId) {
         const commentText = document.getElementById(`comment-text-${postId}`).value;
@@ -137,12 +173,24 @@
                         <button onclick="likeComment(${response.comment_id})" style="display: inline-flex; align-items: center; padding: 6px 12px; font-size: 14px; background-color: #28a745; color: white; border-radius: 4px; border: none; cursor: pointer; margin: 5px; transition: background-color 0.3s ease;">
                             <i class="fas fa-thumbs-up" style="margin-right: 5px;"></i> 
                         </button>
+
                         <button onclick="dislikeComment(${response.comment_id})" style="display: inline-flex; align-items: center; padding: 6px 12px; font-size: 14px; background-color: #dc3545; color: white; border-radius: 4px; border: none; cursor: pointer; margin: 5px; transition: background-color 0.3s ease;">
                             <i class="fas fa-thumbs-down" style="margin-right: 5px;"></i> 
                         </button>
+
                         <button onclick="deleteComment(${response.comment_id})" style="display: inline-flex; align-items: center; padding: 6px 12px; font-size: 14px; background-color: #ffc107; color: black; border-radius: 4px; border: none; cursor: pointer; margin: 5px; transition: background-color 0.3s ease;">
                             <i class="fas fa-trash" style="margin-right: 5px;"></i> Delete
                         </button>
+
+                        <button onclick="toggleReplyForm(${response.comment_id})" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-reply"></i> Reply
+                        </button>
+
+                        <!-- Comment Reply Form (Initially hidden) -->
+                        <div id="reply-form-${response.comment_id}" style="display: none;">
+                            <textarea id="reply-text-${response.comment_id}" class="form-control" placeholder="Write a reply..."></textarea>
+                            <button onclick="addReply(${response.comment_id})" class="btn btn-primary btn-sm">Reply</button>
+                        </div>
                         
                     </div>`;
                     $(`#comments-container-${postId}`).prepend(newComment);
@@ -151,33 +199,96 @@
             }
         });
     }
+
+
+    function addReply(commentId) {
+        // Get the reply text from the textarea
+        const replyText = document.getElementById(`reply-text-${commentId}`).value;
     
-    // Like, Dislike, and Delete Comment Functions
-    function likeComment(commentId) {
+        // Make an AJAX POST request to add the reply
         $.ajax({
             type: 'POST',
-            url: `{% url 'like_comment' 0 %}`.replace('0', commentId),
-            data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
+            url: `/post/${commentId}/add_reply/`, // URL path for adding the reply
+            data: {
+                text: replyText,  // The reply text
+                csrfmiddlewaretoken: '{{ csrf_token }}' // CSRF token for security
+            },
             success: function(response) {
                 if (response.status === 'success') {
-                    $(`#comment-${commentId} .like-count`).text(response.like_count);
+                    // Create the new reply element to display on the page
+                    const newReply = `
+                        <div class="reply" id="reply-${response.reply_id}">
+                            <strong>${response.username}</strong>: ${response.text}
+                            <span class="text-muted">${response.date}</span>
+    
+                            <button onclick="likeReply(${response.reply_id})" style="display: inline-flex; align-items: center; padding: 6px 12px; font-size: 14px; background-color: #28a745; color: white; border-radius: 4px; border: none; cursor: pointer; margin: 5px; transition: background-color 0.3s ease;">
+                                <i class="fas fa-thumbs-up" style="margin-right: 5px;"></i> 
+                            </button>
+    
+                            <button onclick="dislikeReply(${response.reply_id})" style="display: inline-flex; align-items: center; padding: 6px 12px; font-size: 14px; background-color: #dc3545; color: white; border-radius: 4px; border: none; cursor: pointer; margin: 5px; transition: background-color 0.3s ease;">
+                                <i class="fas fa-thumbs-down" style="margin-right: 5px;"></i> 
+                            </button>
+    
+                            <button onclick="deleteReply(${response.reply_id})" style="display: inline-flex; align-items: center; padding: 6px 12px; font-size: 14px; background-color: #ffc107; color: black; border-radius: 4px; border: none; cursor: pointer; margin: 5px; transition: background-color 0.3s ease;">
+                                <i class="fas fa-trash" style="margin-right: 5px;"></i> Delete
+                            </button>
+                        </div>`;
+    
+                    // Append the new reply under the respective comment's reply section
+                    $(`#reply-form-${commentId}`).before(newReply);
+    
+                    // Clear the reply textarea
+                    document.getElementById(`reply-text-${commentId}`).value = '';
                 }
+            }
+        });
+    }
+    
+    // Like and Dislike Comment Functions
+    function likeComment(commentId) {
+        $.ajax({
+            url: `/like_comment/${commentId}/`,
+            type: 'POST',
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    // Update the like and dislike counts for the comment
+                    $(`#comment-${commentId} .comment-like-count`).text(response.like_count);
+                    $(`#comment-${commentId} .comment-dislike-count`).text(response.dislike_count);
+                } else {
+                    alert('An error occurred while liking the comment.');
+                }
+            },
+            error: function() {
+                alert('An error occurred while processing your request.');
             }
         });
     }
 
     function dislikeComment(commentId) {
         $.ajax({
+            url: `/dislike_comment/${commentId}/`,
             type: 'POST',
-            url: `{% url 'dislike_comment' 0 %}`.replace('0', commentId),
-            data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
             success: function(response) {
                 if (response.status === 'success') {
-                    $(`#comment-${commentId} .dislike-count`).text(response.dislike_count);
+                    // Update the like and dislike counts for the comment
+                    $(`#comment-${commentId} .comment-like-count`).text(response.like_count);
+                    $(`#comment-${commentId} .comment-dislike-count`).text(response.dislike_count);
+                } else {
+                    alert('An error occurred while disliking the comment.');
                 }
+            },
+            error: function() {
+                alert('An error occurred while processing your request.');
             }
         });
     }
+        
 
     function deleteComment(commentId) {
         $.ajax({
@@ -194,29 +305,47 @@
         });
     }
 
-    // Like, Dislike, and Delete Reply Functions
+ // Like and Dislike Reply Functions
     function likeReply(replyId) {
         $.ajax({
+            url: `/like_reply/${replyId}/`,
             type: 'POST',
-            url: `{% url 'like_reply' 0 %}`.replace('0', replyId),
-            data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
             success: function(response) {
                 if (response.status === 'success') {
-                    $(`#reply-${replyId} .like-count`).text(response.like_count);
+                    // Update the like and dislike counts for the reply
+                    $(`#reply-${replyId} .reply-like-count`).text(response.like_count);
+                    $(`#reply-${replyId} .reply-dislike-count`).text(response.dislike_count);
+                } else {
+                    alert('An error occurred while liking the reply.');
                 }
+            },
+            error: function() {
+                alert('An error occurred while processing your request.');
             }
         });
     }
 
     function dislikeReply(replyId) {
         $.ajax({
+            url: `/dislike_reply/${replyId}/`,
             type: 'POST',
-            url: `{% url 'dislike_reply' 0 %}`.replace('0', replyId),
-            data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
             success: function(response) {
                 if (response.status === 'success') {
-                    $(`#reply-${replyId} .dislike-count`).text(response.dislike_count);
+                    // Update the like and dislike counts for the reply
+                    $(`#reply-${replyId} .reply-like-count`).text(response.like_count);
+                    $(`#reply-${replyId} .reply-dislike-count`).text(response.dislike_count);
+                } else {
+                    alert('An error occurred while disliking the reply.');
                 }
+            },
+            error: function() {
+                alert('An error occurred while processing your request.');
             }
         });
     }
@@ -249,4 +378,5 @@
         });
     }
 </script>
+
 {% endblock %}

@@ -189,54 +189,134 @@ def add_comment(request, post_id):
 
 
 @login_required
-def add_reply(request, comment_id):
-    comment = Comment.objects.get(id=comment_id)
+def add_reply(request, comment_id, parent_reply_id=None):
+    # Retrieve the comment and optional parent reply
+    comment = get_object_or_404(Comment, id=comment_id)
+    parent_reply = None
+    if parent_reply_id:
+        parent_reply = get_object_or_404(Reply, id=parent_reply_id)
+
+    # Handle the POST request (creating a new reply)
     if request.method == "POST":
         text = request.POST.get('text')
+
+        # Validate the text
         if text:
-            reply = Reply.objects.create(comment=comment, user=request.user, text=text)
-            return JsonResponse({'status': 'success', 'reply_id': reply.id, 'username': reply.user.username, 'text': reply.text, 'date': reply.date_commented.strftime("%b %d, %Y")})
-    return redirect('post_detail', post_id=comment.post.id)
+            # Create the reply, either as a child of a parent reply or as a direct comment reply
+            reply = Reply.objects.create(
+                comment=comment,
+                parent=parent_reply,
+                user=request.user,
+                text=text
+            )
+
+            # Return JSON response with the reply's data
+            return JsonResponse({
+                'status': 'success',
+                'reply_id': reply.id,
+                'username': reply.user.username,
+                'text': reply.text,
+                'date': reply.date_commented.strftime("%b %d, %Y"),
+                'parent_reply_id': parent_reply.id if parent_reply else None,
+            })
+
+    return JsonResponse({'status': 'error', 'message': 'Failed to post reply.'})
 
 
 @login_required
 def like_comment(request, comment_id):
-    comment = Comment.objects.get(id=comment_id)
-    if request.user not in comment.like_count.all():
-        comment.like_count.add(request.user)
-        comment.dislike_count.remove(request.user)  # Remove from dislikes if previously disliked
-        comment.save()
-    return JsonResponse({'status': 'success', 'like_count': comment.like_count.count()})
+    try:
+        comment = Comment.objects.get(id=comment_id)
 
-@login_required
-def like_reply(request, reply_id):
-    reply = Reply.objects.get(id=reply_id)
-    if request.user not in reply.like_count.all():
-        reply.like_count.add(request.user)
-        reply.dislike_count.remove(request.user)  # Remove from dislikes if previously disliked
-        reply.save()
-    return JsonResponse({'status': 'success', 'like_count': reply.like_count.count()})
-    
+        # Toggle like for the current user
+        if request.user in comment.like_count.all():
+            comment.like_count.remove(request.user)
+        else:
+            comment.like_count.add(request.user)
+            # Ensure user is not in dislike_count when they like
+            comment.dislike_count.remove(request.user)
+
+        comment.save()
+
+        return JsonResponse({
+            'status': 'success',
+            'like_count': comment.like_count.count(),
+            'dislike_count': comment.dislike_count.count()
+        })
+    except Comment.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Comment not found'}, status=404)
 
 
 @login_required
 def dislike_comment(request, comment_id):
-    comment = Comment.objects.get(id=comment_id)
-    if request.user not in comment.dislike_count.all():
-        comment.dislike_count.add(request.user)
-        comment.like_count.remove(request.user)  # Remove from likes if previously liked
+    try:
+        comment = Comment.objects.get(id=comment_id)
+
+        # Toggle dislike for the current user
+        if request.user in comment.dislike_count.all():
+            comment.dislike_count.remove(request.user)
+        else:
+            comment.dislike_count.add(request.user)
+            # Ensure user is not in like_count when they dislike
+            comment.like_count.remove(request.user)
+
         comment.save()
-    return JsonResponse({'status': 'success', 'dislike_count': comment.dislike_count.count()})
+
+        return JsonResponse({
+            'status': 'success',
+            'like_count': comment.like_count.count(),
+            'dislike_count': comment.dislike_count.count()
+        })
+    except Comment.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Comment not found'}, status=404)
+
+@login_required
+def like_reply(request, reply_id):
+    try:
+        reply = Reply.objects.get(id=reply_id)
+
+        # Toggle like for the current user
+        if request.user in reply.like_count.all():
+            reply.like_count.remove(request.user)
+        else:
+            reply.like_count.add(request.user)
+            # Ensure user is not in dislike_count when they like
+            reply.dislike_count.remove(request.user)
+
+        reply.save()
+
+        return JsonResponse({
+            'status': 'success',
+            'like_count': reply.like_count.count(),
+            'dislike_count': reply.dislike_count.count()
+        })
+    except Reply.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Reply not found'}, status=404)
+
 
 @login_required
 def dislike_reply(request, reply_id):
-    reply = Reply.objects.get(id=reply_id)
-    if request.user not in reply.dislike_count.all():
-        reply.dislike_count.add(request.user)
-        reply.like_count.remove(request.user)  # Remove from likes if previously liked
-        reply.save()
-    return JsonResponse({'status': 'success', 'dislike_count': reply.dislike_count.count()})
+    try:
+        reply = Reply.objects.get(id=reply_id)
 
+        # Toggle dislike for the current user
+        if request.user in reply.dislike_count.all():
+            reply.dislike_count.remove(request.user)
+        else:
+            reply.dislike_count.add(request.user)
+            # Ensure user is not in like_count when they dislike
+            reply.like_count.remove(request.user)
+
+        reply.save()
+
+        return JsonResponse({
+            'status': 'success',
+            'like_count': reply.like_count.count(),
+            'dislike_count': reply.dislike_count.count()
+        })
+    except Reply.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Reply not found'}, status=404)
+    
 
 def delete_comment(request, comment_id):
     if request.method == 'POST':
