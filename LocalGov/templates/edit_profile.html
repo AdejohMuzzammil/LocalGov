@@ -75,13 +75,14 @@
 
             <div class="form-group mb-3 w-75">
                 {{ form.email.label_tag }}
-                {{ form.email }}
+                <input type="email" name="email" class="form-control" value="{{ user.email }}">
             </div>
 
             <div class="text-center mt-4">
-                <button type="submit" class="btn btn-primary btn-lg px-5">Save Changes</button>
-                <a href="{% url 'chairman_profile' %}" class="btn btn-secondary btn-lg px-5 ml-2">Cancel</a>
+                <button type="submit" class="btn btn-success btn-lg px-5 w-100">Save Changes</button>
+                <button type="button" class="btn btn-secondary btn-lg px-5 w-100 mt-3" onclick="window.location.href='{% url 'chairman_profile' %}'">Cancel</button>
             </div>
+            
         </form>
     </div>
 </div>
@@ -132,83 +133,122 @@
     });
 </script>
 
-
 {% endblock %}
 
 <style>
-/* Improved Edit Profile Page Styles */
-.container {
-    max-width: 700px;
-    margin: auto;
-    padding: 20px;
-    font-family: 'Arial', sans-serif;
-    text-align: center;
-}
+    /* Updated button styling for Nigerian green color */
+    .container {
+        max-width: 700px;
+        margin: auto;
+        padding: 20px;
+        font-family: 'Arial', sans-serif;
+        text-align: center;
+    }
 
-.card {
-    background-color: #f8f9fa;
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
+    .card {
+        background-color: #f8f9fa;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
 
-h2 {
-    color: #343a40;
-    font-weight: bold;
-    font-size: 2rem;
-    margin-bottom: 20px;
-}
+    h2 {
+        color: #343a40;
+        font-weight: bold;
+        font-size: 2rem;
+        margin-bottom: 20px;
+    }
 
-.form-group {
-    margin-bottom: 1.5rem;
-    width: 100%;
-}
+    .form-group {
+        margin-bottom: 1.5rem;
+        width: 100%;
+    }
 
-.form-group label {
-    font-weight: 600;
-    color: #495057;
-}
+    .form-group label {
+        font-weight: 600;
+        color: #495057;
+    }
 
-.form-control {
-    border: 1px solid #ced4da;
-    border-radius: 5px;
-    padding: 10px;
-    font-size: 1rem;
-}
+    .form-control {
+        border: 1px solid #ced4da;
+        border-radius: 5px;
+        padding: 10px;
+        font-size: 1rem;
+    }
 
-button {
-    font-size: 1rem;
-    padding: 10px 20px;
-    border-radius: 30px;
-    transition: all 0.3s ease;
-}
+    button {
+        font-size: 1rem;
+        padding: 10px 20px;
+        border-radius: 30px;
+        transition: all 0.3s ease;
+        width: 100%; /* Ensure both buttons are 100% width inside their container */
+        margin: 5px 0; /* Adds space between buttons */
+    }
 
-button:hover {
-    background-color: #0056b3;
-    color: white;
-}
+    button:hover {
+        background-color: #0056b3;
+        color: white;
+    }
 
-.btn-secondary {
-    background-color: #6c757d;
-    border: none;
-    transition: all 0.3s ease;
-}
+    .btn-secondary {
+        background-color: #6c757d;
+        border: none;
+        transition: all 0.3s ease;
+    }
 
-.btn-secondary:hover {
-    background-color: #5a6268;
-}
+    .btn-secondary:hover {
+        background-color: #5a6268;
+    }
 
-.shadow {
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-}
+    .btn-green {
+        background-color: #28a745; /* Nigerian green color */
+        border: none;
+        transition: all 0.3s ease;
+    }
 
-form {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
+    .btn-green:hover {
+        background-color: #218838;
+    }
 
-.w-75 {
-    width: 75%;
-}
+    .shadow {
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .w-75 {
+        width: 75%;
+    }
+
+    .text-center .btn {
+        margin-right: 4%; /* Space between buttons */
+    }
+
+    .text-center .btn:last-child {
+        margin-right: 0; /* No margin on the last button */
+    }
+
+    /* Ensure the buttons are responsive */
+    @media (max-width: 576px) {
+        .text-center .btn {
+            width: 100%; /* Full width for buttons on small screens */
+            margin-bottom: 10px; /* Add space between buttons */
+        }
+    }
+
+    /* Background color change for the edit profile card */
+    .card {
+        background-color: #28a745; /* Nigerian green color */
+    }
+
+    /* Keep the form's white background */
+    form {
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+    }
 </style>

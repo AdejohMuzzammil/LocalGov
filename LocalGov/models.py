@@ -60,7 +60,6 @@ class ChairmanProfile(models.Model):
         return self.user.username
 
     
-
 class Post(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()

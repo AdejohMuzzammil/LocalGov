@@ -1,4 +1,5 @@
 from django.utils import timezone
+from datetime import datetime
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync, sync_to_async
 from django.shortcuts import render, get_object_or_404, redirect
@@ -16,25 +17,29 @@ from .forms import *
 
 # Create your views here.
 
-
 def signup_view(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            # Save the user and associated profile
+            # Save the user and get profile type from the form
             user = form.save()
             profile_type = form.cleaned_data['profile_type']
 
             # Log the user in
             login(request, user)
 
-            # Create ChairmanProfile if the profile type is 'chairman'
-            if profile_type == 'chairman':
+            # Create or get the UserProfile to make sure it exists
+            UserProfile.objects.get_or_create(user=user, profile_type=profile_type)
+
+            # Redirect based on profile type
+            if profile_type == 'regular':
+                return redirect('home')
+            elif profile_type == 'chairman':
                 return redirect('chairman_profile')
             else:
                 return redirect('home')
         else:
-            print(form.errors)  
+            print(form.errors)
     else:
         form = CustomUserCreationForm()
 
@@ -66,7 +71,6 @@ def login_view(request):
         form = LoginForm()
 
     return render(request, 'signin.html', {'form': form})
-
 
 
 def home(request):
@@ -109,7 +113,6 @@ def chairman_profile(request):
     return render(request, 'profile.html', {'form': form, 'profile': profile})
 
 
-
 @login_required
 def edit_profile(request):
     try:
@@ -119,10 +122,31 @@ def edit_profile(request):
 
     if request.method == 'POST':
         form = ChairmanProfileForm(request.POST, request.FILES, instance=profile)
+        
         if form.is_valid():
+            # Get the selected state and local government from the form
+            selected_state_id = form.cleaned_data['state'].id
+            selected_local_government_id = form.cleaned_data['local_government'].id
+
+            # Check if any other chairman has selected the same state and local government
+            existing_profile = ChairmanProfile.objects.filter(
+                state_id=selected_state_id,
+                local_government_id=selected_local_government_id
+            ).exclude(user=request.user).first()  
+
+            if existing_profile:
+                # Check if the tenure of the existing profile has ended
+                current_date = datetime.now().date()
+                if existing_profile.tenure_end_date >= current_date:
+                    # Raise error if the tenure is still active
+                    messages.error(request, 'There is an existing chairman from the same State and Local government.')
+                    return redirect('edit-profile')  
+
+            # Save the form if all checks pass
             form.save()
             messages.success(request, 'Your Chairman profile has been updated successfully!')
             return redirect('chairman_profile')  
+
     else:
         form = ChairmanProfileForm(instance=profile)
 
@@ -136,7 +160,6 @@ def edit_profile(request):
     })
 
 
-
 def get_local_governments(request, state_id):
     local_governments = LocalGovernment.objects.filter(state_id=state_id)
     data = {
@@ -147,26 +170,19 @@ def get_local_governments(request, state_id):
     return JsonResponse(data)
 
 
-
 @login_required
 def create_post(request):
     try:
-        # Fetch the chairman's profile
         profile = ChairmanProfile.objects.get(user=request.user)
-
-        # Debugging: print the profile details to check what's in the profile
-        print(f"Profile: {profile}, State: {profile.state}, Local Government: {profile.local_government}")
-
-        # Check if profile is incomplete (state or local_government are missing)
         if not profile.state or not profile.local_government:
             messages.warning(request, 'You need to complete your profile before creating a post. Please provide all the required details in your profile.')
             return redirect('edit-profile')
 
         # Check if tenure has ended
-        current_date = timezone.now().date()  # Get the current date
+        current_date = timezone.now().date()  
         if profile.tenure_end_date and profile.tenure_end_date < current_date:
             messages.warning(request, 'Your tenure has ended. You cannot create posts anymore.')
-            return redirect('home')  # Redirect to homepage or another page
+            return redirect('create-post') 
 
     except ChairmanProfile.DoesNotExist:
         messages.warning(request, 'You need to complete your profile before creating a post. Please provide all the required details in your profile.')
@@ -178,12 +194,18 @@ def create_post(request):
             post = form.save(commit=False)
             post.author = request.user
             post.save()
-            return redirect('home')  # Redirect after saving the post
+            return redirect('home')
     else:
-        form = PostForm()
+        form = PostForm(initial={
+            'state': profile.state,
+            'local_government': profile.local_government
+        })
 
-    return render(request, 'create_post.html', {'form': form})
-
+    return render(request, 'create_post.html',
+                   {'form': form, 
+                    'state': profile.state, 
+                    'local_government': profile.local_government
+                    })
 
 @login_required
 def recent_posts_view(request):
@@ -191,12 +213,10 @@ def recent_posts_view(request):
     return render(request, 'recent_posts.html', {'posts': posts})
 
 
-
 @login_required
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     return redirect(f"{reverse('home')}?post_id={post.id}")
-
 
 
 @login_required(login_url='/login/')
@@ -302,6 +322,7 @@ def dislike_comment(request, comment_id):
         })
     except Comment.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Comment not found'}, status=404)
+
 
 @login_required
 def like_reply(request, reply_id):
