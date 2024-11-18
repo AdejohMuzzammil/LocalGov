@@ -1,3 +1,4 @@
+from django.utils import timezone
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync, sync_to_async
 from django.shortcuts import render, get_object_or_404, redirect
@@ -109,7 +110,6 @@ def chairman_profile(request):
 
 
 
-# Edit Chairman Profile (view for updating the profile details)
 @login_required
 def edit_profile(request):
     try:
@@ -126,20 +126,51 @@ def edit_profile(request):
     else:
         form = ChairmanProfileForm(instance=profile)
 
-    return render(request, 'edit_profile.html', {'form': form})
+    states = State.objects.all()
+    local_governments = LocalGovernment.objects.all()
+
+    return render(request, 'edit_profile.html', {
+        'form': form,
+        'states': states,
+        'local_governments': local_governments
+    })
+
+
+
+def get_local_governments(request, state_id):
+    local_governments = LocalGovernment.objects.filter(state_id=state_id)
+    data = {
+        'local_governments': [
+            {'id': lga.id, 'name': lga.name} for lga in local_governments
+        ]
+    }
+    return JsonResponse(data)
+
 
 
 @login_required
 def create_post(request):
     try:
+        # Fetch the chairman's profile
         profile = ChairmanProfile.objects.get(user=request.user)
 
+        # Debugging: print the profile details to check what's in the profile
+        print(f"Profile: {profile}, State: {profile.state}, Local Government: {profile.local_government}")
+
+        # Check if profile is incomplete (state or local_government are missing)
         if not profile.state or not profile.local_government:
             messages.warning(request, 'You need to complete your profile before creating a post. Please provide all the required details in your profile.')
-            return redirect('edit-profile')  
+            return redirect('edit-profile')
+
+        # Check if tenure has ended
+        current_date = timezone.now().date()  # Get the current date
+        if profile.tenure_end_date and profile.tenure_end_date < current_date:
+            messages.warning(request, 'Your tenure has ended. You cannot create posts anymore.')
+            return redirect('home')  # Redirect to homepage or another page
+
     except ChairmanProfile.DoesNotExist:
         messages.warning(request, 'You need to complete your profile before creating a post. Please provide all the required details in your profile.')
-        return redirect('edit-profile')  
+        return redirect('edit-profile')
 
     if request.method == 'POST':
         form = PostForm(request.POST, request.FILES)
@@ -147,9 +178,10 @@ def create_post(request):
             post = form.save(commit=False)
             post.author = request.user
             post.save()
-            return redirect('home') 
+            return redirect('home')  # Redirect after saving the post
     else:
         form = PostForm()
+
     return render(request, 'create_post.html', {'form': form})
 
 
@@ -167,8 +199,9 @@ def post_detail(request, post_id):
 
 
 
-@login_required
+@login_required(login_url='/login/')
 def add_comment(request, post_id):
+    
     try:
         post = Post.objects.get(id=post_id)
     except Post.DoesNotExist:

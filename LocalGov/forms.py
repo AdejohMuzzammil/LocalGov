@@ -61,6 +61,14 @@ class ChairmanProfileForm(forms.ModelForm):
             'tenure_end_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Disable the tenure fields if the tenure start and end dates are already set
+        if self.instance.tenure_start_date and self.instance.tenure_end_date:
+            self.fields['tenure_start_date'].disabled = True
+            self.fields['tenure_end_date'].disabled = True
+
 
 
 class PostForm(forms.ModelForm):

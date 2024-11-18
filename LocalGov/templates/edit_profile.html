@@ -27,24 +27,46 @@
             <div class="form-row w-75">
                 <div class="form-group col-md-6 mb-3">
                     {{ form.state.label_tag }}
-                    {{ form.state }}
+                    <select id="stateDropdown" name="{{ form.state.name }}" class="form-control">
+                        <option value="">Select a state</option>
+                        {% for state in states %}
+                            <option value="{{ state.id }}" {% if form.state.value == state.id %}selected{% endif %}>
+                                {{ state.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
                 </div>
+                
                 <div class="form-group col-md-6 mb-3">
                     {{ form.local_government.label_tag }}
-                    {{ form.local_government }}
+                    <select id="localGovernmentDropdown" name="{{ form.local_government.name }}" class="form-control">
+                        <option value="">Select a local government</option>
+                        {% for lga in form.local_government.field.queryset %}
+                            <option value="{{ lga.id }}" {% if form.local_government.value == lga.id %}selected{% endif %}>
+                                {{ lga.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
                 </div>
             </div>
 
             <div class="form-group mb-3 w-75">
                 {{ form.tenure_start_date.label_tag }}
                 {{ form.tenure_start_date }}
+                {% if form.tenure_start_date.disabled %}
+                    <p>Tenure start date cannot be changed.</p>
+                {% endif %}
             </div>
-
+            
             <div class="form-group mb-3 w-75">
                 {{ form.tenure_end_date.label_tag }}
                 {{ form.tenure_end_date }}
+                {% if form.tenure_end_date.disabled %}
+                    <p>Tenure end date cannot be changed.</p>
+                {% endif %}
+                <hr>
+                <p>Tenure Start and End date can't be changed once set.</p>
             </div>
-
 
             <div class="form-group mb-3 w-75">
                 {{ form.phone_number.label_tag }}
@@ -63,6 +85,54 @@
         </form>
     </div>
 </div>
+
+<!-- JavaScript to filter local governments based on selected state -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var stateDropdown = document.getElementById('stateDropdown');
+        var localGovernmentDropdown = document.getElementById('localGovernmentDropdown');
+        var preSelectedLocalGovt = "{{ form.local_government.value }}"; // Set pre-selected value dynamically
+    
+        // Function to filter local governments based on the selected state
+        function filterLocalGovernments() {
+            var selectedStateId = stateDropdown.value;
+            if (!selectedStateId) {
+                localGovernmentDropdown.innerHTML = '<option value="">Select a local government</option>';
+                return;
+            }
+    
+            // Send AJAX request to fetch local governments based on the selected state
+            fetch(`/get-local-governments/${selectedStateId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    localGovernmentDropdown.innerHTML = '<option value="">Select a local government</option>';
+                    data.local_governments.forEach(function(lga) {
+                        var option = document.createElement('option');
+                        option.value = lga.id;
+                        option.textContent = lga.name;
+    
+                        // Set the previously selected local government as selected
+                        if (lga.id == preSelectedLocalGovt) {
+                            option.selected = true;
+                        }
+    
+                        localGovernmentDropdown.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+    
+        // Add event listener to the state dropdown to filter local governments
+        stateDropdown.addEventListener('change', filterLocalGovernments);
+    
+        // Initial filter based on pre-selected value
+        filterLocalGovernments();
+    });
+</script>
+
+
 {% endblock %}
 
 <style>
@@ -72,7 +142,7 @@
     margin: auto;
     padding: 20px;
     font-family: 'Arial', sans-serif;
-    text-align: center; /* Center text in the container */
+    text-align: center;
 }
 
 .card {
@@ -91,7 +161,7 @@ h2 {
 
 .form-group {
     margin-bottom: 1.5rem;
-    width: 100%; /* Make sure form group elements span full width */
+    width: 100%;
 }
 
 .form-group label {
@@ -135,10 +205,10 @@ button:hover {
 form {
     display: flex;
     flex-direction: column;
-    align-items: center; /* Center align all form elements */
+    align-items: center;
 }
 
 .w-75 {
-    width: 75%; /* Set a width to form elements for central alignment */
+    width: 75%;
 }
 </style>

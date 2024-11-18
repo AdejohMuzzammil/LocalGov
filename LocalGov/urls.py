@@ -11,6 +11,7 @@ urlpatterns = [
     path('chairman-profile/', views.chairman_profile, name='chairman_profile'),
     path('create_chairman_profile/', views.create_chairman_profile, name='create_chairman_profile'),
     path('edit-profile/', views.edit_profile, name='edit-profile'),
+    path('get-local-governments/<int:state_id>/', views.get_local_governments, name='get_local_governments'),
     path('recent-posts/', views.recent_posts_view, name='recent_posts'),
 
     path('post/<int:post_id>/', views.post_detail, name='post'),
