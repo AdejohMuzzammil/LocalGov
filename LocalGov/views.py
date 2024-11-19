@@ -21,25 +21,25 @@ def signup_view(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            # Save the user and get profile type from the form
             user = form.save()
             profile_type = form.cleaned_data['profile_type']
 
-            # Log the user in
             login(request, user)
 
-            # Create or get the UserProfile to make sure it exists
+            # Create UserProfile if not created
             UserProfile.objects.get_or_create(user=user, profile_type=profile_type)
 
-            # Redirect based on profile type
-            if profile_type == 'regular':
-                return redirect('home')
-            elif profile_type == 'chairman':
+            # Redirect to appropriate profile page
+            if profile_type == 'staff':
+                return redirect('staff_profile') 
+
+            if profile_type == 'chairman':
                 return redirect('chairman_profile')
-            else:
-                return redirect('home')
+
+            return redirect('home')  
+
         else:
-            print(form.errors)
+            print(form.errors) 
     else:
         form = CustomUserCreationForm()
 
@@ -54,23 +54,30 @@ def login_view(request):
             email = form.cleaned_data.get('email')
             password = form.cleaned_data.get('password')
 
-            # Authenticate the user
             user = authenticate(request, username=email, password=password)
             if user is not None:
                 login(request, user)
-                # Redirect based on the user's profile type
-                if user.profile_type == 'CHAIRMAN':
-                    return redirect('chairman_profile')
-                else:
-                    return redirect('home')
+
+                try:
+                    if user.profile_type == 'staff':
+                        return redirect('staff_profile')  
+                    
+                    elif user.profile_type == 'chairman':
+                        return redirect('chairman_profile')
+                    else:
+                        return redirect('home')
+
+                except AttributeError:
+                    messages.error(request, "User profile type is missing or not set properly.")
+                    return redirect('login')  
             else:
                 messages.error(request, "Invalid login credentials.")
         else:
             messages.error(request, "Form is invalid.")
     else:
         form = LoginForm()
-
     return render(request, 'signin.html', {'form': form})
+
 
 
 def home(request):
@@ -91,7 +98,7 @@ def create_chairman_profile(request):
     else:
         form = ChairmanProfileForm()
 
-    return render(request, 'create_chairman_profile.html', {'form': form})
+    return render(request, 'chairman/create_chairman_profile.html', {'form': form})
 
 
 
@@ -110,7 +117,7 @@ def chairman_profile(request):
             return redirect('chairman_profile')  
     else:
         form = ChairmanProfileForm(instance=profile)
-    return render(request, 'profile.html', {'form': form, 'profile': profile})
+    return render(request, 'chairman/profile.html', {'form': form, 'profile': profile})
 
 
 @login_required
@@ -153,11 +160,95 @@ def edit_profile(request):
     states = State.objects.all()
     local_governments = LocalGovernment.objects.all()
 
-    return render(request, 'edit_profile.html', {
+    return render(request, 'chairman/edit_profile.html', {
         'form': form,
         'states': states,
         'local_governments': local_governments
     })
+
+
+@login_required
+def chairman_pending_posts(request):
+    posts = StaffPost.objects.filter(status='pending')  
+    return render(request, 'chairman/chairman_pending_posts.html', {'posts': posts})
+
+
+@login_required
+def chairman_post_detail(request, post_id):
+    post = get_object_or_404(StaffPost, id=post_id)
+
+    if request.method == 'POST':
+        if 'approve' in request.POST:
+            post.status = 'approved'
+            post.save()
+            return redirect('home')  
+        elif 'reject' in request.POST:
+            post.status = 'rejected'
+            post.save()
+            return redirect('chairman_pending_posts')  
+
+    return render(request, 'chairman/chairman_post_detail.html', {'post': post})
+
+
+@login_required
+def chairman_archived_posts(request):
+    posts = StaffPost.objects.filter(status='rejected')  
+    return render(request, 'chairman/chairman_archived_posts.html', {'posts': posts})
+
+
+@login_required
+def delete_post(request, post_id):
+    post = get_object_or_404(StaffPost, id=post_id)
+    if post.author == request.user or request.user.is_staff:
+        post.delete()  # Delete the post
+        return redirect('chairman_archived_posts') 
+    else:
+        return redirect('home') 
+
+
+@login_required
+def request_to_work_for_chairman(request):
+    if request.method == 'POST':
+        form = StaffRequestForm(request.POST)
+        if form.is_valid():
+            form.send_request(request.user)
+            return redirect('profile_page') 
+    else:
+        form = StaffRequestForm()
+
+    return render(request, 'staff/staff_profile.html', {'form': form})
+
+
+@login_required
+def view_staff_requests(request):
+    chairman_profile = get_object_or_404(ChairmanProfile, user=request.user)
+    staff_requests = chairman_profile.staff_requests.all()
+    return render(request, 'staff/staff_requests.html', {'staff_requests': staff_requests})
+
+
+@login_required
+def approve_staff(request, staff_id):
+    chairman_profile = get_object_or_404(ChairmanProfile, user=request.user)
+    staff_user = get_object_or_404(User, id=staff_id)
+    
+    # Move the staff from requests to approved staff
+    if staff_user in chairman_profile.staff_requests.all():
+        chairman_profile.staff_requests.remove(staff_user)
+        chairman_profile.approved_staff.add(staff_user)
+
+    return redirect('view_staff_requests')
+
+
+@login_required
+def decline_staff(request, staff_id):
+    chairman_profile = get_object_or_404(ChairmanProfile, user=request.user)
+    staff_user = get_object_or_404(User, id=staff_id)
+    
+    # Remove the staff from the staff requests
+    if staff_user in chairman_profile.staff_requests.all():
+        chairman_profile.staff_requests.remove(staff_user)
+
+    return redirect('view_staff_requests')
 
 
 def get_local_governments(request, state_id):
@@ -179,7 +270,7 @@ def create_post(request):
             return redirect('edit-profile')
 
         # Check if tenure has ended
-        current_date = timezone.now().date()  
+        current_date = timezone.now().date()
         if profile.tenure_end_date and profile.tenure_end_date < current_date:
             messages.warning(request, 'Your tenure has ended. You cannot create posts anymore.')
             return redirect('create-post') 
@@ -201,17 +292,112 @@ def create_post(request):
             'local_government': profile.local_government
         })
 
-    return render(request, 'create_post.html',
-                   {'form': form, 
-                    'state': profile.state, 
-                    'local_government': profile.local_government
-                    })
+    return render(request, 'chairman/create_post.html', {
+        'form': form,
+        'state': profile.state,
+        'local_government': profile.local_government
+    })
+
 
 @login_required
 def recent_posts_view(request):
     posts = Post.objects.order_by('-created_at')[:5]  
-    return render(request, 'recent_posts.html', {'posts': posts})
+    return render(request, 'chairman/recent_posts.html', {'posts': posts})
 
+
+# Staff Profile View
+@login_required
+def staff_profile(request):
+    staff = get_object_or_404(StaffProfile, user=request.user)
+    
+    context = {
+        'staff': staff
+    }
+    return render(request, 'staff/staff_profile.html', context)
+
+
+# Edit Staff Profile View
+@login_required
+def edit_staff_profile(request):
+    staff = get_object_or_404(StaffProfile, user=request.user)
+    
+    if request.method == 'POST':
+        form = EditStaffProfileForm(request.POST, instance=staff)
+        if form.is_valid():
+            form.save()
+            
+            messages.success(request, 'Your profile has been successfully updated.')
+            return redirect('staff_profile')
+    else:
+        form = EditStaffProfileForm(instance=staff)
+    
+    context = {
+        'form': form
+    }
+    return render(request, 'staff/edit_staff_profile.html', context)
+
+
+@login_required
+def get_local_governments(request, state_id):
+    state = get_object_or_404(State, id=state_id)
+    local_governments = LocalGovernment.objects.filter(state=state).values('id', 'name')
+    return JsonResponse({'local_governments': list(local_governments)})
+
+@login_required
+def get_chairmen(request, local_government_id):
+    local_government = get_object_or_404(LocalGovernment, id=local_government_id)
+    chairmen = ChairmanProfile.objects.filter(local_government=local_government).values('id', 'user__username')
+    return JsonResponse({'chairmen': list(chairmen)})
+
+# Create Staff Post View
+@login_required
+def create_staff_post(request):
+    try:
+        staff_profile = StaffProfile.objects.get(user=request.user)  
+    except StaffProfile.DoesNotExist:
+        staff_profile = None  
+
+    if request.method == 'POST':
+        form = StaffPostForm(request.POST, request.FILES)
+        if form.is_valid():
+            staff_post = form.save(commit=False)
+            staff_post.status = 'pending'  
+            staff_post.author = request.user  
+            staff_post.save()
+            return redirect('staff_profile')  
+    else:
+        form = StaffPostForm()
+    return render(request, 'staff/create_staff_post.html', 
+                  {'form': form,
+                    'staff_profile': staff_profile
+                    })
+
+
+@login_required
+def update_staff_post_status(request, post_id, new_status):
+    try:
+        staff_post = StaffPost.objects.get(id=post_id)
+        
+        if request.user == staff_post.chairman.user:  
+            if new_status in ['approved', 'rejected']:
+                staff_post.status = new_status  
+                staff_post.save()
+                return redirect('staff_profile')  
+            else:
+                return redirect('staff_profile') 
+
+        else:
+            return redirect('staff_profile')
+
+    except StaffPost.DoesNotExist:
+        return redirect('staff_profile')
+
+
+@login_required
+def staff_pending_posts(request):
+    posts = StaffPost.objects.filter(author=request.user, status='pending') 
+    return render(request, 'staff_pending_posts.html', {'posts': posts})
+                  
 
 @login_required
 def post_detail(request, post_id):

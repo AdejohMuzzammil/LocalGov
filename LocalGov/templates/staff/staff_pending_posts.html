@@ -1,0 +1,6 @@
+<h2>Your Pending Posts</h2>
+<ul>
+    {% for post in posts %}
+        <li>{{ post.title }} - {{ post.status }}</li>
+    {% endfor %}
+</ul>

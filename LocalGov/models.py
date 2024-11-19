@@ -10,6 +10,7 @@ class UserProfile(models.Model):
     USER_TYPE_CHOICES = [
         ('regular', 'Regular'),
         ('chairman', 'Chairman'),
+        ('staff', 'Staff'),  
     ]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -31,12 +32,10 @@ class LocalGovernment(models.Model):
     def __str__(self):
         return self.name
 
-
 class ChairmanProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
-    # Updated related_name attributes to avoid clashes
     state = models.ForeignKey(
         State, 
         related_name='chairman_profiles', 
@@ -56,10 +55,54 @@ class ChairmanProfile(models.Model):
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     email = models.EmailField()
 
+    # Fields for staff management
+    approved_staff = models.ManyToManyField(User, related_name='approved_staff', blank=True)
+    staff_requests = models.ManyToManyField(User, related_name='staff_requests', blank=True)
+
     def __str__(self):
         return self.user.username
 
     
+class StaffProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    state = models.ForeignKey(State, on_delete=models.SET_NULL, null=True, blank=True)
+    local_government = models.ForeignKey(LocalGovernment, on_delete=models.SET_NULL, null=True, blank=True)  
+    desired_chairman = models.ForeignKey(ChairmanProfile, on_delete=models.SET_NULL, null=True, blank=True)
+    is_approved = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.user.username
+
+
+class StaffPost(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    image = models.ImageField(upload_to='media/post_images/', blank=True, null=True)
+    video = models.FileField(upload_to='media/post_videos/', blank=True, null=True)
+    date_posted = models.DateTimeField(auto_now_add=True)
+    
+    # Add unique related_name attributes to avoid clashes
+    state = models.ForeignKey(State, related_name='staffpost_states', on_delete=models.CASCADE)
+    local_government = models.ForeignKey(LocalGovernment, related_name='staffpost_local_governments', on_delete=models.CASCADE)
+    
+    author = models.ForeignKey(User, related_name='staffpost_author', on_delete=models.CASCADE)  # Unique related_name
+    chairman = models.ForeignKey(ChairmanProfile, related_name='staffpost_chairman', on_delete=models.CASCADE)  # Unique related_name
+    
+    location = models.CharField(max_length=255, blank=True, null=True)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected')
+    ]
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    
+    def __str__(self):
+        return self.title
+    
+
 class Post(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
@@ -77,7 +120,6 @@ class Post(models.Model):
         return self.title
 
     
-
 class Comment(models.Model):
     post = models.ForeignKey(Post, related_name='comments', on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -103,3 +145,20 @@ class Reply(models.Model):
         return f'Reply by {self.user.username} on {self.comment.text}'
 
 
+class SubscriptionPlan(models.Model):
+    name = models.CharField(max_length=50, default="Default Plan")
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.name} - {self.amount}"
+    
+
+class Subscription(models.Model):
+    chairman = models.OneToOneField('ChairmanProfile', on_delete=models.CASCADE)
+    plan = models.ForeignKey(SubscriptionPlan, on_delete=models.SET_NULL, null=True, blank=True)
+    is_active = models.BooleanField(default=False)
+    payment_date = models.DateField(blank=True, null=True)
+    next_payment_due = models.DateField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.chairman.user.username} Subscription"

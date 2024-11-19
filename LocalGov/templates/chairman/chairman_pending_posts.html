@@ -1,0 +1,6 @@
+<h2>Pending Posts</h2>
+<ul>
+    {% for post in posts %}
+        <li><a href="{% url 'chairman_post_detail' post.id %}">{{ post.title }}</a></li>
+    {% endfor %}
+</ul>

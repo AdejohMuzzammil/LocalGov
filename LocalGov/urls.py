@@ -11,13 +11,29 @@ urlpatterns = [
     path('chairman-profile/', views.chairman_profile, name='chairman_profile'),
     path('create_chairman_profile/', views.create_chairman_profile, name='create_chairman_profile'),
     path('edit-profile/', views.edit_profile, name='edit-profile'),
+    path('staff-requests/', views.view_staff_requests, name='view_staff_requests'),
+    path('request-to-work/', views.request_to_work_for_chairman, name='request_to_work'),
+    path('approve-staff/<int:staff_id>/', views.approve_staff, name='approve_staff'),
+    path('decline-staff/<int:staff_id>/', views.decline_staff, name='decline_staff'),
+    path('chairman/pending/', views.chairman_pending_posts, name='chairman_pending_posts'),
+    path('chairman/post/<int:post_id>/', views.chairman_post_detail, name='chairman_post_detail'),
+    path('update_status/<int:post_id>/<str:new_status>/', views.update_staff_post_status, name='update_staff_post_status'),
+    path('chairman/archived/', views.chairman_archived_posts, name='chairman_archived_posts'),
+
+    path('post/delete/<int:post_id>/', views.delete_post, name='delete_post'),
+
+    path('staff-profile/', views.staff_profile, name='staff_profile'),
+    path('edit-staff-profile/', views.edit_staff_profile, name='edit_staff_profile'),
+    path('get_local_government/<int:state_id>/', views.get_local_governments, name='get_local_government'),
+    path('get_chairman/<int:local_government_id>/', views.get_chairmen, name='get_chairman'),
+    path('create-staff-post/', views.create_staff_post, name='create_staff_post'),
+     path('staff/pending/', views.staff_pending_posts, name='staff_pending_posts'),
+
     path('get-local-governments/<int:state_id>/', views.get_local_governments, name='get_local_governments'),
+
     path('recent-posts/', views.recent_posts_view, name='recent_posts'),
-
     path('post/<int:post_id>/', views.post_detail, name='post'),
-
     path('post/<int:post_id>/add_comment/', views.add_comment, name='add_comment'),
-    
     path('post/<int:comment_id>/add_reply/', views.add_reply, name='add_reply'),
 
     path('like_comment/<int:comment_id>/', views.like_comment, name='like_comment'),

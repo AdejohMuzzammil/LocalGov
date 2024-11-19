@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from django.db import IntegrityError
+from django.shortcuts import get_object_or_404
 from . models import *
 
 
@@ -27,21 +28,26 @@ class CustomUserCreationForm(UserCreationForm):
                 user.save()
                 if not UserProfile.objects.filter(user=user).exists():
                     user_profile = UserProfile.objects.create(user=user, profile_type=profile_type)
-                
+
+                # Only create StaffProfile with user for staff users
+                if profile_type == 'staff' and not StaffProfile.objects.filter(user=user).exists():
+                    StaffProfile.objects.create(user=user)
+
                 if profile_type == 'chairman' and not ChairmanProfile.objects.filter(user=user).exists():
                     ChairmanProfile.objects.create(user=user)
+
             except IntegrityError as e:
                 user.delete()  
                 raise IntegrityError(f"Error creating profiles: {e}")
-        
+
         return user
 
     
-
 class LoginForm(AuthenticationForm):
     class Meta:
         model = User
         fields = ['username', 'password']
+
 
 class ChairmanProfileForm(forms.ModelForm):
     class Meta:
@@ -69,6 +75,42 @@ class ChairmanProfileForm(forms.ModelForm):
             self.fields['tenure_start_date'].disabled = True
             self.fields['tenure_end_date'].disabled = True
 
+class StaffRequestForm(forms.Form):
+    chairman_id = forms.IntegerField()
+
+    def send_request(self, user):
+        chairman = get_object_or_404(ChairmanProfile, id=self.cleaned_data['chairman_id'])
+        chairman.staff_requests.add(user)
+
+class EditStaffProfileForm(forms.ModelForm):
+    class Meta:
+        model = StaffProfile
+        fields = ['state', 'local_government', 'desired_chairman']
+        widgets = {
+            'state': forms.Select(attrs={'class': 'form-control'}),
+            'local_government': forms.Select(attrs={'class': 'form-control'}),
+            'desired_chairman': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+class StaffPostForm(forms.ModelForm):
+    class Meta:
+        model = StaffPost
+        fields = [
+            'title', 'description', 'image', 'video', 
+            'state', 'local_government', 'author', 
+            'chairman', 'location', 'latitude', 'longitude', 'status'
+        ]
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
+            'state': forms.Select(attrs={'class': 'form-control'}),
+            'local_government': forms.Select(attrs={'class': 'form-control'}),
+            'author': forms.Select(attrs={'class': 'form-control'}),
+            'chairman': forms.Select(attrs={'class': 'form-control'}),
+            'location': forms.TextInput(attrs={'class': 'form-control'}),
+            'latitude': forms.NumberInput(attrs={'class': 'form-control'}),
+            'longitude': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
 
 
 class PostForm(forms.ModelForm):
@@ -96,21 +138,6 @@ class PostForm(forms.ModelForm):
             'latitude': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Latitude'}),
             'longitude': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Longitude'}),
         }
-
-
-# class CommentForm(forms.ModelForm):
-#     class Meta:
-#         model = Comment
-#         fields = ['text'] 
-
-# class ReplyForm(forms.ModelForm):
-#     class Meta:
-#         model = Comment
-#         fields = ['text']
-    
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self.fields['text'].widget.attrs.update({'placeholder': 'Reply to this comment', 'class': 'form-control'})
 
 
 class CommentForm(forms.ModelForm):

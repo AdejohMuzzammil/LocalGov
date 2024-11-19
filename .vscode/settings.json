@@ -8,6 +8,8 @@
         "forloop",
         "Localgov",
         "signin",
+        "staffpost",
+        "unclickable",
         "userprofile"
     ]
 }

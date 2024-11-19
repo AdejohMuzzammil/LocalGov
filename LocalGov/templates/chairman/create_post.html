@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Create Post{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="form-header text-center mb-4">
+        <h2>Create a New Post</h2>
+        <p class="text-muted">Share updates, events, or important information with the community</p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="create-post-form">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <div class="form-group mb-3">
+            {{ form.title.label_tag }}
+            {{ form.title }}
+        </div>
+
+        <div class="form-group mb-3">
+            {{ form.description.label_tag }}
+            {{ form.description }}
+        </div>
+
+        <div class="form-group mb-3">
+            {{ form.image.label_tag }}
+            {{ form.image }}
+        </div>
+
+        <div class="form-group mb-3">
+            {{ form.video.label_tag }}
+            {{ form.video }}
+        </div>
+
+        <div class="form-group mb-3">
+            {{ form.state.label_tag }}
+            {{ form.state }}
+        </div>
+
+        <div class="form-group mb-3">
+            {{ form.local_government.label_tag }}
+            {{ form.local_government }}
+        </div>
+
+        <div class="form-group mb-3">
+            {{ form.location.label_tag }}
+            {{ form.location }}
+        </div>
+
+        <!-- Hidden latitude and longitude fields -->
+        <div class="form-group mb-3" id="latitude-field" style="display:none;">
+            {{ form.latitude }}
+        </div>
+
+        <div class="form-group mb-3" id="longitude-field" style="display:none;">
+            {{ form.longitude }}
+        </div>
+
+        <div class="text-center">
+            <button type="submit" class="btn btn-success">Publish Post</button>
+            <a href="{% url 'chairman_profile' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get chairman's state and local government from Django context
+    const chairmanState = "{{ chairman_state }}"; // State from chairman's profile
+    const chairmanLocalGov = "{{ chairman_local_government }}"; // Local government from chairman's profile
+
+    // Get the state and local government dropdown elements
+    const stateSelect = document.getElementById('id_state');
+    const localGovSelect = document.getElementById('id_local_government');
+
+    // Keep only the chairman's state in the state dropdown
+    Array.from(stateSelect.options).forEach(function(option) {
+        if (option.value !== chairmanState) {
+            option.remove(); // Remove all other options
+        }
+    });
+
+    // Keep only the chairman's local government in the local government dropdown
+    Array.from(localGovSelect.options).forEach(function(option) {
+        if (option.value !== chairmanLocalGov) {
+            option.remove(); // Remove all other options
+        }
+    });
+
+    // Ensure the dropdowns are enabled so the form can be submitted
+    stateSelect.disabled = false;
+    localGovSelect.disabled = false;
+});
+</script>
+
+<style>
+/* Create Post Page Styles */
+.container {
+    max-width: 800px;
+    margin: auto;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+}
+.form-header {
+    margin-bottom: 20px;
+}
+.form-header h2 {
+    font-size: 1.8em;
+    font-weight: bold;
+}
+.text-muted {
+    color: #6c757d;
+}
+.create-post-form .form-group {
+    margin-bottom: 15px;
+}
+.form-control {
+    border-radius: 5px;
+    font-size: 1em;
+    padding: 10px;
+}
+.btn {
+    margin-top: 15px;
+    padding: 10px 20px;
+    font-size: 1em;
+    border-radius: 5px;
+}
+</style>

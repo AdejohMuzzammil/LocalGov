@@ -1,0 +1,9 @@
+<h2>{{ post.title }}</h2>
+<p>{{ post.description }}</p>
+<!-- Show other post details like image, video, etc. -->
+
+<form method="POST">
+    {% csrf_token %}
+    <button type="submit" name="approve">Approve</button>
+    <button type="submit" name="reject">Reject</button>
+</form>

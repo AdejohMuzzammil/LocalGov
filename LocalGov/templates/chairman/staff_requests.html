@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>Staff Requests</h2>
+  <ul>
+    {% for staff in staff_requests %}
+      <li>
+        {{ staff.username }}
+        <a href="{% url 'approve_staff' staff.id %}">Approve</a>
+        <a href="{% url 'decline_staff' staff.id %}">Decline</a>
+      </li>
+    {% endfor %}
+  </ul>
+{% endblock %}

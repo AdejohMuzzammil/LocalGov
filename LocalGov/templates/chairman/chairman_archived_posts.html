@@ -1,0 +1,8 @@
+<h2>Archived Posts</h2>
+<ul>
+    {% for post in posts %}
+        <li>{{ post.title }} 
+            <a href="{% url 'delete_post' post.id %}">Delete</a>
+        </li>
+    {% endfor %}
+</ul>

@@ -1,49 +1,50 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Create Post{% endblock %}
+{% block title %}Create Staff Post{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
     <div class="form-header text-center mb-4">
-        <h2>Create a New Post</h2>
-        <p class="text-muted">Share updates, events, or important information with the community</p>
+        <h2>Create a New Staff Post</h2>
+        <p class="text-muted">Share important updates, events, or announcements with the staff</p>
     </div>
 
     <form method="POST" enctype="multipart/form-data" class="create-post-form">
         {% csrf_token %}
         {{ form.non_field_errors }}
-        
+
         <div class="form-group mb-3">
             {{ form.title.label_tag }}
             {{ form.title }}
         </div>
-        
+
         <div class="form-group mb-3">
             {{ form.description.label_tag }}
             {{ form.description }}
         </div>
-        
+
         <div class="form-group mb-3">
             {{ form.image.label_tag }}
             {{ form.image }}
         </div>
-        
+
         <div class="form-group mb-3">
             {{ form.video.label_tag }}
             {{ form.video }}
         </div>
-        
+
+        <!-- Dynamically show the state and local government -->
         <div class="form-group mb-3">
-            {{ form.state.label_tag }}
-            {{ form.state }}
+            <label for="state">State</label>
+            <input type="text" class="form-control" id="state" value="{{ staff_profile.state.name }}" disabled>
         </div>
-        
+
         <div class="form-group mb-3">
-            {{ form.local_government.label_tag }}
-            {{ form.local_government }}
+            <label for="local_government">Local Government</label>
+            <input type="text" class="form-control" id="local_government" value="{{ staff_profile.local_government.name }}" disabled>
         </div>
-        
+
         <div class="form-group mb-3">
             {{ form.location.label_tag }}
             {{ form.location }}
@@ -60,11 +61,10 @@
 
         <div class="text-center">
             <button type="submit" class="btn btn-success">Publish Post</button>
-            <a href="{% url 'chairman_profile' %}" class="btn btn-secondary">Cancel</a>
+            <a href="{% url 'staff_profile' %}" class="btn btn-secondary">Cancel</a>
         </div>
     </form>
 </div>
-
 {% endblock %}
 
 <script>
@@ -96,59 +96,66 @@ function updateCoordinates() {
     }
 }
 
-var message = document.getElementById('warning-message');
-    if (message) {
-        // Display the message for 3 seconds
-        setTimeout(function() {
-            message.style.display = 'none';  
-        }, 3000);  
-}
-
 // Add event listener to location input field
 document.getElementById('id_location').addEventListener('blur', updateCoordinates);
 </script>
 
 <style>
-/* Create Post Page Styles */
-.container {
-    max-width: 800px;
-    margin: auto;
-    padding: 20px;
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
-}
-.form-header {
-    margin-bottom: 20px;
-}
-.form-header h2 {
-    font-size: 1.8em;
-    font-weight: bold;
-}
-.text-muted {
-    color: #6c757d;
-}
-.create-post-form .form-group {
-    margin-bottom: 15px;
-}
-.form-control {
-    border-radius: 5px;
-    font-size: 1em;
-    padding: 10px;
-}
-.btn {
-    margin-top: 15px;
-    padding: 10px 20px;
-    font-size: 1em;
-    border-radius: 5px;
-}
-
-#warning-message {
-    background-color: #f8d7da;
-    color: #721c24;
-    padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 20px;
-    border: 1px solid #f5c6cb;
-}
+    /* Create Post Page Styles */
+    .container {
+        max-width: 800px;
+        margin: auto;
+        padding: 20px;
+        background-color: #ffffff; /* White background to match the flag */
+        border-radius: 8px;
+        box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-header {
+        margin-bottom: 20px;
+    }
+    
+    .form-header h2 {
+        font-size: 1.8em;
+        font-weight: bold;
+        color: #008751; /* Green color for title */
+    }
+    
+    .text-muted {
+        color: #6c757d;
+    }
+    
+    .create-post-form .form-group {
+        margin-bottom: 15px;
+    }
+    
+    .form-control {
+        border-radius: 5px;
+        font-size: 1em;
+        padding: 10px;
+        border: 1px solid #008751; /* Green border for form fields */
+    }
+    
+    .btn {
+        margin-top: 15px;
+        padding: 10px 20px;
+        font-size: 1em;
+        border-radius: 5px;
+        background-color: #008751; /* Green background for buttons */
+        color: white; /* White text for the buttons */
+        border: none;
+    }
+    
+    .btn:hover {
+        background-color: #006f3a; /* Darker green on hover */
+    }
+    
+    #warning-message {
+        background-color: #f8d7da;
+        color: #721c24;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        border: 1px solid #f5c6cb;
+    }
 </style>

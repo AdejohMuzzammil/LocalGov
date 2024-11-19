@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <style>
+    /* General Profile Container */
+    .profile-container {
+      background-color: #ffffff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      max-width: 800px;
+      margin: 40px auto;
+    }
+
+    /* Profile Heading */
+    h1 {
+      text-align: center;
+      color: #008751; /* Nigerian flag green */
+      font-size: 36px;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+
+    /* Profile Information Section */
+    .profile-info p {
+      font-size: 18px;
+      line-height: 1.6;
+      margin-bottom: 12px;
+      color: #333;
+    }
+
+    .profile-info strong {
+      color: #008751; /* Nigerian flag green */
+    }
+
+    /* Approval Status */
+    .approval-status {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+
+    .approved-status {
+      color: #008751; /* Nigerian flag green */
+      font-weight: bold;
+    }
+
+    .pending-status {
+      color: #f39c12; /* Orange for pending */
+      font-weight: bold;
+    }
+
+    /* Action Button Styles */
+    .btn {
+      display: inline-block;
+      background-color: #008751; /* Nigerian flag green */
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      text-align: center;
+      text-decoration: none;
+      font-size: 16px;
+      margin: 10px 0;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: #005f3b; /* Darker green on hover */
+    }
+
+    /* Buttons Container */
+    .profile-actions {
+      text-align: center;
+      margin-top: 40px;
+    }
+
+    /* Spacing Between Sections */
+    .profile-info {
+      margin-bottom: 30px;
+    }
+  </style>
+
+  <div class="profile-container">
+    <h1>Staff Profile</h1>
+    
+    <div class="profile-info">
+      <p><strong>Username:</strong> {{ staff.user.username }}</p>
+      <p><strong>State:</strong> {{ staff.state.name }}</p>
+      <p><strong>Local Government:</strong> {{ staff.local_government.name }}</p>
+      <p><strong>Desired Chairman:</strong> {{ staff.desired_chairman.user.username }}</p>
+    </div>
+
+    <div class="approval-status">
+      {% if staff.is_approved %}
+        <p class="approved-status">Your request to work for {{ staff.desired_chairman.user.username }} has been approved!</p>
+      {% else %}
+        <p class="pending-status">Your request to work for {{ staff.desired_chairman.user.username }} is pending approval.</p>
+      {% endif %}
+    </div>
+
+    <div class="profile-actions">
+      <a href="{% url 'edit_staff_profile' %}" class="btn">Edit Profile</a>
+      <a href="{% url 'create_staff_post' %}" class="btn">Create Post</a>
+    </div>
+  </div>
+{% endblock %}
