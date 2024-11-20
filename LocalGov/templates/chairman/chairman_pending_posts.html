@@ -1,6 +1,101 @@
-<h2>Pending Posts</h2>
-<ul>
-    {% for post in posts %}
-        <li><a href="{% url 'chairman_post_detail' post.id %}">{{ post.title }}</a></li>
-    {% endfor %}
-</ul>
+{% extends 'base.html' %}
+
+{% block title %}Pending Posts{% endblock %}
+
+{% block content %}
+<div class="pending-posts-container">
+    <h2 class="pending-posts-title">Pending Posts</h2>
+
+    <!-- Staff Request Notification Icon -->
+    <div class="staff-request-notification">
+        <a href="{% url 'view_staff_requests' %}" class="staff-request-link">
+            <i class="fas fa-bell"></i> Staff Requests
+        </a>
+    </div>
+
+    <ul class="pending-posts-list">
+        {% for post in posts %}
+            <li class="post-item">
+                <a href="{% url 'chairman_post_detail' post.id %}" class="post-link">{{ post.title }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}
+
+<!-- Add Font Awesome CDN link -->
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
+<style>
+/* Pending Posts Page Styles */
+.pending-posts-container {
+    max-width: 800px;
+    margin: auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.pending-posts-title {
+    color: #008751; /* Green from the Nigerian flag */
+    text-align: center;
+    font-size: 2em;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.pending-posts-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.post-item {
+    background-color: #e6ffe6; /* Light green for a soft, appealing background */
+    margin-bottom: 15px;
+    padding: 15px;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.post-link {
+    text-decoration: none;
+    color: #004d1a; /* Darker green for text */
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+.post-link:hover {
+    color: #002d0a; /* Even darker green for hover effect */
+}
+
+.post-item:hover {
+    background-color: #ccffcc; /* Lighter green on hover */
+}
+
+/* Staff Request Notification Icon */
+.staff-request-notification {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 2em;
+    z-index: 10;
+}
+
+.staff-request-link {
+    color: #008751; /* Green color for the notification */
+    text-decoration: none;
+}
+
+.staff-request-link:hover {
+    color: #004d1a; /* Darker green on hover */
+}
+
+.staff-request-link i {
+    color: #008751; /* Apply green color to the bell icon */
+}
+
+.staff-request-link:hover i {
+    color: #004d1a; /* Darker green on hover for the bell icon */
+}
+</style>

@@ -14,6 +14,7 @@ urlpatterns = [
     path('staff-requests/', views.view_staff_requests, name='view_staff_requests'),
     path('request-to-work/', views.request_to_work_for_chairman, name='request_to_work'),
     path('approve-staff/<int:staff_id>/', views.approve_staff, name='approve_staff'),
+    path('remove-staff/<int:staff_id>/', views.remove_staff, name='remove_staff'),
     path('decline-staff/<int:staff_id>/', views.decline_staff, name='decline_staff'),
     path('chairman/pending/', views.chairman_pending_posts, name='chairman_pending_posts'),
     path('chairman/post/<int:post_id>/', views.chairman_post_detail, name='chairman_post_detail'),

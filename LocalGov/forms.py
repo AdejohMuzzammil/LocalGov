@@ -82,15 +82,26 @@ class StaffRequestForm(forms.Form):
         chairman = get_object_or_404(ChairmanProfile, id=self.cleaned_data['chairman_id'])
         chairman.staff_requests.add(user)
 
+
+class StaffApprovalForm(forms.ModelForm):
+    class Meta:
+        model = StaffProfile
+        fields = ['state', 'local_government']
+
+
 class EditStaffProfileForm(forms.ModelForm):
     class Meta:
         model = StaffProfile
-        fields = ['state', 'local_government', 'desired_chairman']
+        fields = ['profile_picture','first_name', 'last_name', 'state', 'local_government', 'desired_chairman' ]
         widgets = {
+            'profile_picture': forms.ClearableFileInput(attrs={'class': 'form-control-file'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter first name'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter last name'}),
             'state': forms.Select(attrs={'class': 'form-control'}),
             'local_government': forms.Select(attrs={'class': 'form-control'}),
             'desired_chairman': forms.Select(attrs={'class': 'form-control'}),
         }
+
 
 class StaffPostForm(forms.ModelForm):
     class Meta:

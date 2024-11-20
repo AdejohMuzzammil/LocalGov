@@ -12,6 +12,8 @@ from django.urls import reverse
 from django.http import JsonResponse
 from .forms import CustomUserCreationForm
 from django.contrib.auth import authenticate,login
+from django.http import HttpResponseBadRequest
+from django.http import Http404
 from . models import *
 from .forms import *
 
@@ -222,21 +224,49 @@ def request_to_work_for_chairman(request):
 @login_required
 def view_staff_requests(request):
     chairman_profile = get_object_or_404(ChairmanProfile, user=request.user)
-    staff_requests = chairman_profile.staff_requests.all()
-    return render(request, 'staff/staff_requests.html', {'staff_requests': staff_requests})
+    staff_requests = StaffProfile.objects.filter(desired_chairman=chairman_profile, status='pending')
+
+    # Check if the form was submitted for approval or decline
+    if request.method == 'POST':
+        staff_id = request.POST.get('staff_id')
+        action = request.POST.get('action')
+        staff = get_object_or_404(StaffProfile, id=staff_id)
+
+        if action == 'approve':
+            staff.status = 'approved'  
+            staff.is_approved = True  
+        elif action == 'decline':
+            staff.status = 'rejected'  
+            staff.is_approved = False  
+
+        staff.save()  
+
+        return redirect('view_staff_requests')  
+
+    # Render the page with the list of pending staff requests and the form
+    return render(request, 'chairman/staff_requests.html', {
+        'staff_requests': staff_requests,  
+        'form': StaffApprovalForm(), 
+    })
 
 
 @login_required
 def approve_staff(request, staff_id):
-    chairman_profile = get_object_or_404(ChairmanProfile, user=request.user)
-    staff_user = get_object_or_404(User, id=staff_id)
-    
-    # Move the staff from requests to approved staff
-    if staff_user in chairman_profile.staff_requests.all():
-        chairman_profile.staff_requests.remove(staff_user)
-        chairman_profile.approved_staff.add(staff_user)
+    if request.method == 'POST':
+        # Get the staff profile by ID
+        staff_profile = get_object_or_404(StaffProfile, id=staff_id)
 
-    return redirect('view_staff_requests')
+        # Approve the staff profile
+        staff_profile.status = 'approved'
+        staff_profile.is_approved = True
+        staff_profile.save()
+
+        # Fetch all staff profiles (update for rendering)
+        staff_requests = StaffProfile.objects.all()
+
+        return render(request, 'chairman/staff_requests.html', {'staff_requests': staff_requests})
+    else:
+        return HttpResponseBadRequest("Invalid request method.")
 
 
 @login_required
@@ -249,6 +279,17 @@ def decline_staff(request, staff_id):
         chairman_profile.staff_requests.remove(staff_user)
 
     return redirect('view_staff_requests')
+
+
+@login_required
+def remove_staff(request, staff_id):
+    staff = get_object_or_404(StaffProfile, id=staff_id)
+
+    staff.is_approved = False  
+    staff.save()
+
+    messages.success(request, 'Staff has been removed from the approved list.')
+    return redirect('approved_staff')
 
 
 def get_local_governments(request, state_id):
@@ -265,18 +306,29 @@ def get_local_governments(request, state_id):
 def create_post(request):
     try:
         profile = ChairmanProfile.objects.get(user=request.user)
-        if not profile.state or not profile.local_government:
-            messages.warning(request, 'You need to complete your profile before creating a post. Please provide all the required details in your profile.')
+        
+        # Check if the profile is complete
+        if not all([profile.state, profile.local_government, profile.tenure_start_date, profile.tenure_end_date]):
+            messages.warning(
+                request,
+                'You need to complete your profile before creating a post. '
+            )
             return redirect('edit-profile')
 
-        # Check if tenure has ended
+        # Check if the chairman's tenure has ended
         current_date = timezone.now().date()
-        if profile.tenure_end_date and profile.tenure_end_date < current_date:
-            messages.warning(request, 'Your tenure has ended. You cannot create posts anymore.')
-            return redirect('create-post') 
-
+        if profile.tenure_end_date < current_date:
+            messages.warning(
+                request,
+                'Your tenure has ended. You cannot create posts anymore.'
+            )
+            return redirect('chairman_profile') 
     except ChairmanProfile.DoesNotExist:
-        messages.warning(request, 'You need to complete your profile before creating a post. Please provide all the required details in your profile.')
+        messages.warning(
+            request,
+            'You need to complete your profile before creating a post. '
+            'Please provide all the required details in your profile.'
+        )
         return redirect('edit-profile')
 
     if request.method == 'POST':
@@ -285,7 +337,8 @@ def create_post(request):
             post = form.save(commit=False)
             post.author = request.user
             post.save()
-            return redirect('home')
+            messages.success(request, 'Post created successfully.')
+            return redirect('home') 
     else:
         form = PostForm(initial={
             'state': profile.state,
@@ -311,30 +364,60 @@ def staff_profile(request):
     staff = get_object_or_404(StaffProfile, user=request.user)
     
     context = {
-        'staff': staff
+        'staff': staff,
+    
     }
     return render(request, 'staff/staff_profile.html', context)
 
 
-# Edit Staff Profile View
 @login_required
 def edit_staff_profile(request):
     staff = get_object_or_404(StaffProfile, user=request.user)
-    
+
     if request.method == 'POST':
-        form = EditStaffProfileForm(request.POST, instance=staff)
+        form = EditStaffProfileForm(request.POST, request.FILES, instance=staff)
+        
         if form.is_valid():
-            form.save()
-            
+            staff_profile = form.save(commit=False)
+
+            # Check if a new profile picture is uploaded
+            if 'profile_picture' in request.FILES:
+                staff_profile.profile_picture = request.FILES['profile_picture']
+
+            state = staff_profile.state
+            local_government = staff_profile.local_government
+
+            # Fetch the ChairmanProfile based on state and local government
+            chairman_profile = ChairmanProfile.objects.filter(
+                state=state, local_government=local_government
+            ).first()
+
+            if chairman_profile:
+                staff_profile.desired_chairman = chairman_profile
+
+            # Preserve the approved status if already approved
+            if staff_profile.is_approved:
+                staff_profile.status = 'approved'  
+            else:
+                staff_profile.status = 'pending'  
+                staff_profile.is_approved = False  
+
+            # Save the updated staff profile
+            staff_profile.save()
             messages.success(request, 'Your profile has been successfully updated.')
             return redirect('staff_profile')
+
+        else:
+            messages.error(request, 'There was an error in your form. Please check the details and try again.')
     else:
         form = EditStaffProfileForm(instance=staff)
-    
+
     context = {
-        'form': form
+        'form': form,
+        'staff': staff 
     }
     return render(request, 'staff/edit_staff_profile.html', context)
+
 
 
 @login_required
@@ -349,14 +432,54 @@ def get_chairmen(request, local_government_id):
     chairmen = ChairmanProfile.objects.filter(local_government=local_government).values('id', 'user__username')
     return JsonResponse({'chairmen': list(chairmen)})
 
+
 # Create Staff Post View
 @login_required
 def create_staff_post(request):
     try:
-        staff_profile = StaffProfile.objects.get(user=request.user)  
-    except StaffProfile.DoesNotExist:
-        staff_profile = None  
+        # Retrieve the staff profile
+        staff_profile = StaffProfile.objects.get(user=request.user)
+        chairman = staff_profile.desired_chairman
 
+        # Check if the staff is associated with a chairman
+        if not chairman:
+            messages.warning(
+                request,
+                "You are not associated with any chairman. Please contact an administrator."
+            )
+            return redirect('staff_profile')
+
+        # Check if the staff account is approved by the chairman
+        if not staff_profile.is_approved:
+            messages.warning(
+                request,
+                "Your account has not been approved by the chairman. Please contact your chairman for approval."
+            )
+            return redirect('staff_profile')
+
+        # Check if the chairman's profile is incomplete
+        if not all([chairman.state, chairman.local_government, chairman.tenure_start_date, chairman.tenure_end_date]):
+            messages.warning(
+                request,
+                "The chairman you are associated with has not updated their profile. "
+                "Please wait until they complete their profile."
+            )
+            return redirect('staff_profile')
+
+        # Check if the chairman's tenure has ended
+        current_date = timezone.now().date()
+        if chairman.tenure_end_date and chairman.tenure_end_date < current_date:
+            messages.warning(
+                request,
+                "You cannot create posts because the tenure of the chairman you work for has ended."
+            )
+            return redirect('staff_profile')
+
+    except StaffProfile.DoesNotExist:
+        messages.error(request, "Your staff profile could not be found. Please contact an administrator.")
+        return redirect('staff_profile')
+
+    # Handle the post creation
     if request.method == 'POST':
         form = StaffPostForm(request.POST, request.FILES)
         if form.is_valid():
@@ -364,13 +487,15 @@ def create_staff_post(request):
             staff_post.status = 'pending'  
             staff_post.author = request.user  
             staff_post.save()
-            return redirect('staff_profile')  
+            messages.success(request, "Post created successfully and is pending approval.")
+            return redirect('staff_profile') 
     else:
         form = StaffPostForm()
-    return render(request, 'staff/create_staff_post.html', 
-                  {'form': form,
-                    'staff_profile': staff_profile
-                    })
+
+    return render(request, 'staff/create_staff_post.html', {
+        'form': form,
+        'staff_profile': staff_profile
+    })
 
 
 @login_required

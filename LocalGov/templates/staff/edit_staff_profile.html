@@ -4,27 +4,46 @@
   <div class="container">
     <h1 class="page-title">Edit Staff Profile</h1>
 
-    <form method="POST" id="edit-staff-form">
+    <form method="POST" enctype="multipart/form-data" id="edit-staff-form">
       {% csrf_token %}
+      
+      <!-- First Name -->
+      <div class="form-group">
+        <label for="first_name">First Name</label>
+        {{ form.first_name }}
+      </div>
 
+      <!-- Last Name -->
+      <div class="form-group">
+        <label for="last_name">Last Name</label>
+        {{ form.last_name }}
+      </div>
+
+      <!-- State Dropdown -->
       <div class="form-group">
         <label for="state">State</label>
         {{ form.state }}
       </div>
 
-      <!-- Local Government dropdown (always visible) -->
+      <!-- Local Government Dropdown -->
       <div class="form-group">
         <label for="local_government">Local Government</label>
         {{ form.local_government }}
       </div>
 
-      <!-- Chairman dropdown (always visible) -->
+      <!-- Chairman Dropdown -->
       <div class="form-group">
         <label for="desired_chairman">Desired Chairman</label>
         {{ form.desired_chairman }}
       </div>
 
-      <!-- Save Changes button inside the form -->
+      <!-- Profile Picture -->
+      <div class="form-group">
+        <label for="profile_picture">Profile Picture</label>
+        {{ form.profile_picture }}
+      </div>
+
+      <!-- Save Changes button -->
       <div class="button-container">
         <button type="submit" class="btn btn-success">Save Changes</button>
         <a href="{% url 'staff_profile' %}" class="btn btn-secondary">Cancel</a>
@@ -32,17 +51,15 @@
     </form>
   </div>
 
-  <!-- Internal CSS -->
   <style>
     .container {
-      max-width: 700px; /* Balanced width for the form */
+      max-width: 700px;
       margin: 30px auto;
       padding: 20px;
       background-color: #ffffff;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
-
     .page-title {
       text-align: center;
       font-size: 24px;
@@ -50,71 +67,36 @@
       margin-bottom: 20px;
       font-weight: bold;
     }
-
     .form-group {
       margin-bottom: 15px;
     }
-
     label {
-      display: block;
-      font-size: 14px;
       font-weight: 600;
       color: #333;
       margin-bottom: 5px;
     }
-
-    .form-control {
+    .form-control, .form-control-file {
       width: 100%;
-      padding: 8px 10px; /* Adjusted padding for better fit */
-      font-size: 14px; /* Set a standard font size */
+      padding: 8px;
+      font-size: 14px;
       border: 1px solid #ccc;
       border-radius: 4px;
-      box-sizing: border-box;
-      overflow: visible; /* Ensure text is not clipped */
     }
-
-    .form-control::placeholder {
-      opacity: 0.6;
-      font-style: italic;
-    }
-
-    .form-control:focus {
-      border-color: #80bdff;
-      outline: none;
-      box-shadow: 0 0 5px rgba(128, 189, 255, 0.5);
-    }
-
     .button-container {
       display: flex;
       justify-content: space-between;
       margin-top: 20px;
     }
-
-    .btn {
-      padding: 10px 15px;
-      font-size: 14px;
-      border-radius: 4px;
-      border: none;
-      cursor: pointer;
-      text-decoration: none;
-    }
-
     .btn-success {
       background-color: #28a745;
       color: #fff;
     }
-
     .btn-secondary {
       background-color: #6c757d;
       color: #fff;
     }
-
-    .btn:hover {
-      opacity: 0.9;
-    }
   </style>
 
-  <!-- JavaScript for AJAX functionality -->
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       const stateSelect = document.getElementById('id_state');
@@ -122,52 +104,39 @@
       const chairmanSelect = document.getElementById('id_desired_chairman');
 
       // Listen for changes on the state dropdown
-      stateSelect.addEventListener('change', function() {
+      stateSelect.addEventListener('change', function () {
         const stateId = this.value;
 
         if (stateId) {
-          // AJAX request to get local governments for the selected state
           fetch(`/get_local_government/${stateId}/`)
             .then(response => response.json())
             .then(data => {
-              updateLocalGovernments(data.local_governments);
-              // Clear the chairman list when the state changes
+              updateDropdown(localGovernmentSelect, data.local_governments, 'name');
               chairmanSelect.innerHTML = '<option value="">Select Chairman</option>';
             });
         }
       });
 
       // Listen for changes on the local government dropdown
-      localGovernmentSelect.addEventListener('change', function() {
+      localGovernmentSelect.addEventListener('change', function () {
         const localGovernmentId = this.value;
 
         if (localGovernmentId) {
-          // AJAX request to get chairmen for the selected local government
           fetch(`/get_chairman/${localGovernmentId}/`)
             .then(response => response.json())
             .then(data => {
-              updateChairmen(data.chairmen);
+              updateDropdown(chairmanSelect, data.chairmen, 'user__username');
             });
         }
       });
 
-      function updateLocalGovernments(localGovernments) {
-        localGovernmentSelect.innerHTML = '<option value="">Select Local Government</option>';
-        localGovernments.forEach(function(localGov) {
+      function updateDropdown(dropdown, items, labelKey) {
+        dropdown.innerHTML = `<option value="">Select ${dropdown.id.replace('id_', '').replace('_', ' ')}</option>`;
+        items.forEach(item => {
           const option = document.createElement('option');
-          option.value = localGov.id;
-          option.text = localGov.name;
-          localGovernmentSelect.appendChild(option);
-        });
-      }
-
-      function updateChairmen(chairmen) {
-        chairmanSelect.innerHTML = '<option value="">Select Chairman</option>';
-        chairmen.forEach(function(chairman) {
-          const option = document.createElement('option');
-          option.value = chairman.id;
-          option.text = chairman.user__username;
-          chairmanSelect.appendChild(option);
+          option.value = item.id;
+          option.text = item[labelKey];
+          dropdown.appendChild(option);
         });
       }
     });

@@ -13,6 +13,11 @@
         {% endif %}
         <h2 class="profile-name">{{ profile.user.first_name }} {{ profile.user.last_name }}</h2>
         <p class="profile-email">{{ profile.email }}</p>
+
+        <a href="{% url 'chairman_pending_posts' %}" class="notification-link">
+            <i class="fas fa-bell"></i><br>
+            Notifications
+        </a>
     </div>
 
     <div class="profile-details text-center mt-4">

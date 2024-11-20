@@ -65,14 +65,24 @@ class ChairmanProfile(models.Model):
     
 class StaffProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    profile_picture = models.ImageField(upload_to='staff_profile_pictures/', blank=True, null=True)
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
     state = models.ForeignKey(State, on_delete=models.SET_NULL, null=True, blank=True)
     local_government = models.ForeignKey(LocalGovernment, on_delete=models.SET_NULL, null=True, blank=True)  
     desired_chairman = models.ForeignKey(ChairmanProfile, on_delete=models.SET_NULL, null=True, blank=True)
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected')
+    ]
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     is_approved = models.BooleanField(default=False)
 
     def __str__(self):
         return self.user.username
-
+    
 
 class StaffPost(models.Model):
     title = models.CharField(max_length=255)
@@ -102,7 +112,6 @@ class StaffPost(models.Model):
     def __str__(self):
         return self.title
     
-
 class Post(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()

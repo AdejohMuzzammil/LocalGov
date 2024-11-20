@@ -1,14 +1,212 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block content %}
-  <h2>Staff Requests</h2>
-  <ul>
+  <h2 class="staff-requests-title">Staff Requests</h2>
+  <ul class="staff-list">
     {% for staff in staff_requests %}
-      <li>
-        {{ staff.username }}
-        <a href="{% url 'approve_staff' staff.id %}">Approve</a>
-        <a href="{% url 'decline_staff' staff.id %}">Decline</a>
+      <li class="staff-item">
+        <div class="staff-card">
+          <!-- Display Staff Picture -->
+          <div class="staff-picture-container">
+            <img src="{{ staff.profile_picture.url }}" alt="{{ staff.user.username }}'s Profile Picture" class="rounded-circle profile-picture mb-3" style="width: 150px; height: 150px;">
+          </div>
+          
+          <!-- Display Staff Full Name -->
+          <p class="staff-name"><strong>{{ staff.first_name }} {{ staff.last_name }}</strong></p>
+          
+          <!-- Display Staff State and Local Government -->
+          <div class="staff-details">
+            <p><strong>State:</strong> {{ staff.state }}</p>
+            <p><strong>Local Government:</strong> {{ staff.local_government }}</p>
+          </div>
+
+          <!-- Staff Action Buttons -->
+          <div class="action-buttons">
+            {% if staff.status == 'pending' %}
+                <!-- Approve Button -->
+                <form method="post" action="{% url 'approve_staff' staff.id %}" class="action-form">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-approve">Approve</button>
+                </form>
+        
+                <!-- Decline Button -->
+                <form method="post" action="{% url 'decline_staff' staff.id %}" class="action-form">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-decline">Decline</button>
+                </form>
+            {% elif staff.status == 'approved' %}
+                <!-- Remove Button -->
+                <form method="post" action="{% url 'remove_staff' staff.id %}" class="action-form">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-remove">Remove</button>
+                </form>
+            {% endif %}
+        </div>
+          
+        </div>
       </li>
     {% endfor %}
   </ul>
+
+  <style>
+    /* Base container style */
+    .container {
+      margin: 30px auto;
+      padding: 20px;
+      max-width: 900px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Title style */
+    .staff-requests-title {
+      text-align: center;
+      font-size: 28px;
+      color: #008751; /* Green color from Nigerian flag */
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+    
+    /* List of staff items */
+    .staff-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .staff-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    
+    .staff-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      padding: 20px;
+      background-color: #f8f9fa; /* Light grey background for each staff card */
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+    }
+    
+    /* Hover effect for staff card */
+    .staff-card:hover {
+      transform: translateY(-5px);
+    }
+    
+    /* Profile picture */
+    .staff-picture-container {
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .profile-picture {
+      border: 3px solid #008751; /* Green border around the picture */
+      border-radius: 50%;
+    }
+    
+    /* Staff name styling */
+    .staff-name {
+      font-size: 20px;
+      color: #333;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    
+    /* Staff details */
+    .staff-details {
+      text-align: center;
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 20px;
+    }
+    
+    .staff-details p {
+      margin: 5px 0;
+    }
+    
+    .staff-details strong {
+      color: #008751; /* Green for headings */
+    }
+    
+    /* Action buttons */
+    .action-buttons {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+    }
+    
+    .action-form {
+      display: inline-block;
+    }
+    
+    .btn {
+      padding: 8px 16px;
+      font-size: 14px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+      transition: background-color 0.3s ease;
+    }
+    
+    .btn-approve {
+      background-color: #008751; /* Green color for approve */
+      color: white;
+      margin-right: 10px;
+    }
+    
+    .btn-approve:hover {
+      background-color: #006f3c;
+    }
+    
+    .btn-decline {
+      background-color: #e74c3c; /* Red color for decline */
+      color: white;
+    }
+    
+    .btn-decline:hover {
+      background-color: #c0392b;
+    }
+
+    /* New Remove button styling */
+    .btn-remove {
+      background-color: #f39c12; /* Orange color for remove */
+      color: white;
+    }
+
+    .btn-remove:hover {
+      background-color: #e67e22;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .staff-card {
+        padding: 15px;
+      }
+    
+      .action-buttons {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    
+      .btn {
+        margin-bottom: 10px;
+      }
+    
+      .staff-name {
+        font-size: 18px;
+      }
+    }
+    
+  </style>
+  
 {% endblock %}
