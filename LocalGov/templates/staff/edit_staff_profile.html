@@ -7,18 +7,7 @@
     <form method="POST" enctype="multipart/form-data" id="edit-staff-form">
       {% csrf_token %}
       
-      <!-- First Name -->
-      <div class="form-group">
-        <label for="first_name">First Name</label>
-        {{ form.first_name }}
-      </div>
-
-      <!-- Last Name -->
-      <div class="form-group">
-        <label for="last_name">Last Name</label>
-        {{ form.last_name }}
-      </div>
-
+      
       <!-- State Dropdown -->
       <div class="form-group">
         <label for="state">State</label>

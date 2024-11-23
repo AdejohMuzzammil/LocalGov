@@ -171,8 +171,34 @@ def edit_profile(request):
 
 @login_required
 def chairman_pending_posts(request):
-    posts = StaffPost.objects.filter(status='pending')  
-    return render(request, 'chairman/chairman_pending_posts.html', {'posts': posts})
+    try:
+        chairman_profile = ChairmanProfile.objects.get(user=request.user)
+
+        posts = StaffPost.objects.filter(chairman=chairman_profile, status='pending')
+
+        if request.method == 'POST':
+            post_id = request.POST.get('post_id')
+            action = request.POST.get('action')  
+            post = get_object_or_404(StaffPost, id=post_id)
+
+            if action == 'approve':
+                post.status = 'approved'
+                post.save()
+                messages.success(request, f"Post '{post.title}' approved.")
+            elif action == 'reject':
+                post.status = 'rejected'
+                post.save()
+                messages.success(request, f"Post '{post.title}' rejected.")
+
+            return redirect('chairman_pending_posts')  
+
+    except ChairmanProfile.DoesNotExist:
+        messages.error(request, "You are not authorized to approve or reject posts.")
+        return redirect('unauthorized')
+
+    return render(request, 'chairman/chairman_pending_posts.html', {
+        'posts': posts,
+    })
 
 
 @login_required
@@ -224,72 +250,159 @@ def request_to_work_for_chairman(request):
 @login_required
 def view_staff_requests(request):
     chairman_profile = get_object_or_404(ChairmanProfile, user=request.user)
-    staff_requests = StaffProfile.objects.filter(desired_chairman=chairman_profile, status='pending')
 
-    # Check if the form was submitted for approval or decline
+    # Fetch staff requests with different statuses
+    pending_staff_requests = StaffProfile.objects.filter(desired_chairman=chairman_profile, status='pending')
+    approved_staff = StaffProfile.objects.filter(desired_chairman=chairman_profile, status='approved')
+    declined_staff = StaffProfile.objects.filter(desired_chairman=chairman_profile, status='declined')
+    removed_staff = StaffProfile.objects.filter(desired_chairman=chairman_profile, status='removed')
+
+    # Check if it's an AJAX request for fetching pending count
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' and request.method == 'GET':
+        staff_request_count = pending_staff_requests.count()
+        return JsonResponse({'staff_request_count': staff_request_count})
+
+    # Handle form submissions for approval, decline, removal, or reinstatement
     if request.method == 'POST':
         staff_id = request.POST.get('staff_id')
         action = request.POST.get('action')
-        staff = get_object_or_404(StaffProfile, id=staff_id)
 
+        # Ensure the staff is associated with this chairman
+        staff = get_object_or_404(StaffProfile, id=staff_id, desired_chairman=chairman_profile)
+
+        # Perform the appropriate action
         if action == 'approve':
-            staff.status = 'approved'  
-            staff.is_approved = True  
+            staff.status = 'approved'
+            staff.is_approved = True
+            chairman_profile.staff_requests.remove(staff.user)  # Remove from requests
+            chairman_profile.approved_staff.add(staff.user)  # Add to approved staff
         elif action == 'decline':
-            staff.status = 'rejected'  
-            staff.is_approved = False  
+            staff.status = 'declined'
+            staff.is_approved = False
+            chairman_profile.staff_requests.remove(staff.user)  # Remove from requests
+        elif action == 'remove':
+            staff.status = 'removed'
+            chairman_profile.approved_staff.remove(staff.user)  # Remove from approved staff
+        elif action == 'reinstate':
+            staff.status = 'pending'
+            chairman_profile.staff_requests.add(staff.user)  # Add back to requests
 
-        staff.save()  
+        staff.save()
+        return redirect('view_staff_requests')
 
-        return redirect('view_staff_requests')  
+    # Fetch the count of pending requests
+    staff_request_count = pending_staff_requests.count()
 
-    # Render the page with the list of pending staff requests and the form
     return render(request, 'chairman/staff_requests.html', {
-        'staff_requests': staff_requests,  
-        'form': StaffApprovalForm(), 
+        'pending_staff_requests': pending_staff_requests,
+        'approved_staff': approved_staff,
+        'declined_staff': declined_staff,
+        'removed_staff': removed_staff,
+        'staff_request_count': staff_request_count,
     })
-
+  
 
 @login_required
 def approve_staff(request, staff_id):
     if request.method == 'POST':
         # Get the staff profile by ID
-        staff_profile = get_object_or_404(StaffProfile, id=staff_id)
+        staff = get_object_or_404(StaffProfile, id=staff_id)
 
         # Approve the staff profile
-        staff_profile.status = 'approved'
-        staff_profile.is_approved = True
-        staff_profile.save()
+        staff.status = 'approved'
+        staff.is_approved = True
+        staff.save()
 
-        # Fetch all staff profiles (update for rendering)
-        staff_requests = StaffProfile.objects.all()
+        # Display a success message
+        messages.success(request, f'{staff.user.first_name} {staff.user.last_name} has been approved.')
 
-        return render(request, 'chairman/staff_requests.html', {'staff_requests': staff_requests})
-    else:
-        return HttpResponseBadRequest("Invalid request method.")
+        # Fetch the updated list of approved staff
+        approved_staff = StaffProfile.objects.filter(is_approved=True)
+
+        # Render the updated list back to the same page
+        return render(request, 'chairman/staff_requests.html', {'staff_requests': approved_staff})
+
+    # If not a POST request, redirect to the list view
+    return redirect('view_staff_requests')
 
 
 @login_required
 def decline_staff(request, staff_id):
-    chairman_profile = get_object_or_404(ChairmanProfile, user=request.user)
-    staff_user = get_object_or_404(User, id=staff_id)
-    
-    # Remove the staff from the staff requests
-    if staff_user in chairman_profile.staff_requests.all():
-        chairman_profile.staff_requests.remove(staff_user)
+    try:
+        if request.method == 'POST':
+            # Get the chairman's profile
+            chairman_profile = get_object_or_404(ChairmanProfile, user=request.user)
+            
+            # Get the staff's profile
+            staff = get_object_or_404(StaffProfile, id=staff_id)
+            staff_user = staff.user  # Correct reference to the User instance
+            
+            # Check if the staff's user is in the chairman's staff_requests
+            if chairman_profile.staff_requests.filter(id=staff_user.id).exists():
+                # Remove the staff's user from staff_requests
+                chairman_profile.staff_requests.remove(staff_user)
+                chairman_profile.save()
 
+                # Update the staff profile's status to "declined"
+                staff.status = 'declined'
+                staff.save()
+
+                # Provide feedback to the user
+                messages.success(
+                    request, 
+                    f"{staff_user.first_name} {staff_user.last_name}'s request has been declined."
+                )
+            else:
+                # Log the situation if staff isn't found in the chairman's requests
+                messages.error(request, 'This staff member is not in your staff requests.')
+                print(f"Staff ID: {staff.id} not found in chairman's staff requests.")
+    
+    except StaffProfile.DoesNotExist:
+        messages.error(request, 'The staff member does not exist.')
+    except Exception as e:
+        messages.error(request, f"An unexpected error occurred: {e}")
+        print(f"Error in decline_staff view: {e}") 
+    
     return redirect('view_staff_requests')
 
 
 @login_required
 def remove_staff(request, staff_id):
+    print(f"Received staff_id for removal: {staff_id}")  # Debugging line
+
+    try:
+        # Get the staff profile based on staff_id
+        staff = StaffProfile.objects.get(id=staff_id)
+
+        # Change the staff's status and approval status
+        staff.status = 'removed'
+        staff.is_approved = False
+        staff.save()
+
+        # Success message
+        messages.success(request, f'{staff.user.first_name} {staff.user.last_name} has been removed from the approved list.')
+
+    except StaffProfile.DoesNotExist:
+        # Error message
+        messages.error(request, 'Staff profile not found.')
+
+    # Redirect to the list of staff requests
+    return redirect('view_staff_requests')
+
+
+@login_required
+def reinstate_staff(request, staff_id):
     staff = get_object_or_404(StaffProfile, id=staff_id)
+    try:
+        chairman_profile = ChairmanProfile.objects.get(user=request.user)
+    except ChairmanProfile.DoesNotExist:
+        return redirect('unauthorized')
 
-    staff.is_approved = False  
+    staff.status = 'approved'
+    staff.is_approved = True
     staff.save()
-
-    messages.success(request, 'Staff has been removed from the approved list.')
-    return redirect('approved_staff')
+    messages.success(request, f'{staff.user.first_name} {staff.user.last_name} has been reinstated.')
+    return redirect('view_staff_requests')
 
 
 def get_local_governments(request, state_id):
@@ -374,20 +487,30 @@ def staff_profile(request):
 def edit_staff_profile(request):
     staff = get_object_or_404(StaffProfile, user=request.user)
 
+    if staff.status == 'approved':
+        messages.info(request, 'Your profile has been approved and cannot be edited.')
+        return redirect('staff_profile')
+
+    if staff.status == 'removed':
+        messages.error(request, 'Your profile has been removed and cannot be edited.')
+        return redirect('staff_profile')
+
+    if staff.status not in ['pending', 'declined']:
+        messages.error(request, 'You cannot edit your profile at this moment.')
+        return redirect('staff_profile')
+
     if request.method == 'POST':
         form = EditStaffProfileForm(request.POST, request.FILES, instance=staff)
         
         if form.is_valid():
             staff_profile = form.save(commit=False)
 
-            # Check if a new profile picture is uploaded
             if 'profile_picture' in request.FILES:
                 staff_profile.profile_picture = request.FILES['profile_picture']
 
             state = staff_profile.state
             local_government = staff_profile.local_government
 
-            # Fetch the ChairmanProfile based on state and local government
             chairman_profile = ChairmanProfile.objects.filter(
                 state=state, local_government=local_government
             ).first()
@@ -395,23 +518,24 @@ def edit_staff_profile(request):
             if chairman_profile:
                 staff_profile.desired_chairman = chairman_profile
 
-            # Preserve the approved status if already approved
+                if staff_profile.status == 'pending':
+                    chairman_profile.staff_requests.add(staff_profile.user)  
+                    chairman_profile.save()
+
             if staff_profile.is_approved:
                 staff_profile.status = 'approved'  
             else:
                 staff_profile.status = 'pending'  
                 staff_profile.is_approved = False  
 
-            # Save the updated staff profile
             staff_profile.save()
-            messages.success(request, 'Your profile has been successfully updated.')
+            messages.success(request, 'Your profile has been successfully updated. And your request was sent to the chairman to confirm your profile')
             return redirect('staff_profile')
 
         else:
             messages.error(request, 'There was an error in your form. Please check the details and try again.')
     else:
         form = EditStaffProfileForm(instance=staff)
-
     context = {
         'form': form,
         'staff': staff 
@@ -426,6 +550,7 @@ def get_local_governments(request, state_id):
     local_governments = LocalGovernment.objects.filter(state=state).values('id', 'name')
     return JsonResponse({'local_governments': list(local_governments)})
 
+
 @login_required
 def get_chairmen(request, local_government_id):
     local_government = get_object_or_404(LocalGovernment, id=local_government_id)
@@ -433,12 +558,22 @@ def get_chairmen(request, local_government_id):
     return JsonResponse({'chairmen': list(chairmen)})
 
 
-# Create Staff Post View
 @login_required
 def create_staff_post(request):
     try:
         # Retrieve the staff profile
         staff_profile = StaffProfile.objects.get(user=request.user)
+
+        # Check if the staff profile status is 'removed' or 'declined'
+        if staff_profile.status == 'removed':
+            messages.error(request, "Your profile has been removed by the chairman. You cannot create a post.")
+            return redirect('staff_profile')
+
+        if staff_profile.status == 'declined':
+            chairman_name = staff_profile.desired_chairman.name if staff_profile.desired_chairman else "Unknown Chairman"
+            messages.error(request, f"Your profile was declined by {chairman_name}. You cannot create a post.")
+            return redirect('staff_profile')
+
         chairman = staff_profile.desired_chairman
 
         # Check if the staff is associated with a chairman
@@ -486,9 +621,11 @@ def create_staff_post(request):
             staff_post = form.save(commit=False)
             staff_post.status = 'pending'  
             staff_post.author = request.user  
+            staff_post.chairman = staff_profile.desired_chairman  
             staff_post.save()
             messages.success(request, "Post created successfully and is pending approval.")
-            return redirect('staff_profile') 
+            return redirect('staff_profile')  
+
     else:
         form = StaffPostForm()
 

@@ -2,211 +2,360 @@
 {% load static %}
 
 {% block content %}
-  <h2 class="staff-requests-title">Staff Requests</h2>
-  <ul class="staff-list">
-    {% for staff in staff_requests %}
-      <li class="staff-item">
+<h2 class="staff-requests-title">Staff Requests</h2>
+
+<!-- Pending Staff Section -->
+<h3>Pending Staff Requests</h3>
+<ul class="staff-list">
+    {% for staff in pending_staff_requests %}
+    <li class="staff-item">
         <div class="staff-card">
-          <!-- Display Staff Picture -->
-          <div class="staff-picture-container">
-            <img src="{{ staff.profile_picture.url }}" alt="{{ staff.user.username }}'s Profile Picture" class="rounded-circle profile-picture mb-3" style="width: 150px; height: 150px;">
-          </div>
-          
-          <!-- Display Staff Full Name -->
-          <p class="staff-name"><strong>{{ staff.first_name }} {{ staff.last_name }}</strong></p>
-          
-          <!-- Display Staff State and Local Government -->
-          <div class="staff-details">
-            <p><strong>State:</strong> {{ staff.state }}</p>
-            <p><strong>Local Government:</strong> {{ staff.local_government }}</p>
-          </div>
+            <div class="staff-picture-container">
+                <img src="{{ staff.profile_picture.url }}" alt="{{ staff.user.username }}'s Profile Picture" class="rounded-circle profile-picture mb-3" style="width: 150px; height: 150px;">
+            </div>
+            <p class="staff-name"><strong>{{ staff.user.first_name }} {{ staff.user.last_name }}</strong></p>
+            <div class="staff-details">
+                <p><strong>State:</strong> {{ staff.state }}</p>
+                <p><strong>Local Government:</strong> {{ staff.local_government }}</p>
+            </div>
 
-          <!-- Staff Action Buttons -->
-          <div class="action-buttons">
-            {% if staff.status == 'pending' %}
-                <!-- Approve Button -->
-                <form method="post" action="{% url 'approve_staff' staff.id %}" class="action-form">
+            <div class="action-buttons">
+                <form method="post" action="">
                     {% csrf_token %}
-                    <button type="submit" class="btn btn-approve">Approve</button>
+                    <input type="hidden" name="staff_id" value="{{ staff.id }}">
+                    <button type="submit" name="action" value="approve" class="btn btn-approve">Approve</button>
                 </form>
-        
-                <!-- Decline Button -->
-                <form method="post" action="{% url 'decline_staff' staff.id %}" class="action-form">
+                
+                <form method="post" action="{% url 'decline_staff' staff.id %}">
                     {% csrf_token %}
-                    <button type="submit" class="btn btn-decline">Decline</button>
+                    <input type="hidden" name="staff_id" value="{{ staff.id }}">
+                    <button type="submit" name="action" value="decline" class="btn btn-decline">Decline</button>
                 </form>
-            {% elif staff.status == 'approved' %}
-                <!-- Remove Button -->
-                <form method="post" action="{% url 'remove_staff' staff.id %}" class="action-form">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-remove">Remove</button>
-                </form>
-            {% endif %}
+            </div>
         </div>
-          
-        </div>
-      </li>
+    </li>
+    {% empty %}
+    <p>No pending staff requests.</p>
     {% endfor %}
-  </ul>
+</ul>
 
-  <style>
-    /* Base container style */
+<!-- Approved Staff Section with Toggle -->
+<h3>
+    <button class="toggle-btn" onclick="toggleVisibility('approved-staff')">Approved Staff</button>
+</h3>
+<div id="approved-staff" class="toggle-section">
+    <ul class="staff-list">
+        {% for staff in approved_staff %}
+        <li class="staff-item">
+            <div class="staff-card">
+                <div class="staff-picture-container">
+                    <img src="{{ staff.profile_picture.url }}" alt="{{ staff.user.username }}'s Profile Picture" class="rounded-circle profile-picture mb-3" style="width: 150px; height: 150px;">
+                </div>
+                <p class="staff-name"><strong>{{ staff.user.first_name }} {{ staff.user.last_name }}</strong></p>
+                <div class="staff-details">
+                    <p><strong>State:</strong> {{ staff.state }}</p>
+                    <p><strong>Local Government:</strong> {{ staff.local_government }}</p>
+                    <p><strong>Status:</strong> Approved</p>
+                </div>
+                <div class="action-buttons">
+                    {% if staff.status != 'declined' %}
+                        <form method="post" action="{% url 'remove_staff' staff.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="staff_id" value="{{ staff.id }}">
+                            <button type="submit" name="action" value="remove" class="btn btn-remove">Remove</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </li>
+        {% empty %}
+        <p>No approved staff members.</p>
+        {% endfor %}
+    </ul>
+</div>
+
+<!-- Declined Staff Section with Toggle -->
+<h3>
+    <button class="toggle-btn" onclick="toggleVisibility('declined-staff')">Declined Staff</button>
+</h3>
+<div id="declined-staff" class="toggle-section">
+    <ul class="staff-list">
+        {% for staff in declined_staff %}
+        <li class="staff-item">
+            <div class="staff-card">
+                <div class="staff-picture-container">
+                    <img src="{{ staff.profile_picture.url }}" alt="{{ staff.user.username }}'s Profile Picture" class="rounded-circle profile-picture mb-3" style="width: 150px; height: 150px;">
+                </div>
+                <p class="staff-name"><strong>{{ staff.user.first_name }} {{ staff.user.last_name }}</strong></p>
+                <div class="staff-details">
+                    <p><strong>State:</strong> {{ staff.state }}</p>
+                    <p><strong>Local Government:</strong> {{ staff.local_government }}</p>
+                    <p><strong>Status:</strong> Declined</p>
+                </div>
+                <div class="action-buttons"></div>
+            </div>
+        </li>
+        {% empty %}
+        <p>No declined staff members.</p>
+        {% endfor %}
+    </ul>
+</div>
+
+<!-- Removed Staff Section with Toggle -->
+<h3>
+    <button class="toggle-btn" onclick="toggleVisibility('removed-staff')">Removed Staff</button>
+</h3>
+<div id="removed-staff" class="toggle-section">
+    <ul class="staff-list">
+        {% for staff in removed_staff %}
+        <li class="staff-item">
+            <div class="staff-card">
+                <div class="staff-picture-container">
+                    <img src="{{ staff.profile_picture.url }}" alt="{{ staff.user.username }}'s Profile Picture" class="rounded-circle profile-picture mb-3" style="width: 150px; height: 150px;">
+                </div>
+                <p class="staff-name"><strong>{{ staff.user.first_name }} {{ staff.user.last_name }}</strong></p>
+                <div class="staff-details">
+                    <p><strong>State:</strong> {{ staff.state }}</p>
+                    <p><strong>Local Government:</strong> {{ staff.local_government }}</p>
+                    <p><strong>Status:</strong> Removed</p>
+                </div>
+                <div class="action-buttons">
+                    <form method="post" action="{% url 'reinstate_staff' staff.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="staff_id" value="{{ staff.id }}">
+                        <button type="submit" name="action" value="reinstate" class="btn btn-reinstate">Reinstate</button>
+                    </form>
+                </div>
+            </div>
+        </li>
+        {% empty %}
+        <p>No removed staff members.</p>
+        {% endfor %}
+    </ul>
+</div>
+
+<!-- JavaScript for Toggle Functionality -->
+<script>
+    function toggleVisibility(sectionId) {
+        var section = document.getElementById(sectionId);
+        section.classList.toggle('visible');
+    }
+</script>
+
+<!-- CSS Styles -->
+<style>
+
+    h3 {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 20px 0;
+    }
+    
+    .toggle-btn {
+        background-color: #008751;
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s ease, transform 0.3s ease;
+        border-radius: 12px;
+    }
+    
+    .toggle-btn:hover {
+        background-color: #006f3c;
+        transform: scale(1.05); 
+    }
+
+    .toggle-section {
+        display: none;
+        opacity: 0;
+        height: 0;
+        overflow: hidden;
+        transition: opacity 0.5s ease-out, height 0.5s ease-out;
+    }
+    
+    .toggle-section.visible {
+        display: block;
+        opacity: 1;
+        height: auto; /* Allow height to expand naturally */
+    }
+
     .container {
-      margin: 30px auto;
-      padding: 20px;
-      max-width: 900px;
-      background-color: #fff;
-      border-radius: 8px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        margin: 30px auto;
+        padding: 20px;
+        max-width: 900px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     }
     
-    /* Title style */
     .staff-requests-title {
-      text-align: center;
-      font-size: 28px;
-      color: #008751; /* Green color from Nigerian flag */
-      font-weight: 600;
-      margin-bottom: 20px;
+        text-align: center;
+        font-size: 28px;
+        color: #008751;
+        font-weight: 600;
+        margin-bottom: 20px;
+        animation: fadeIn 1s ease-out;
     }
     
-    /* List of staff items */
+    @keyframes fadeIn {
+        0% { opacity: 0; }
+        100% { opacity: 1; }
+    }
+
     .staff-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
+        list-style: none;
+        padding: 0;
+        margin: 0;
     }
     
     .staff-item {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        opacity: 0;
+        animation: fadeInUp 0.5s ease-out forwards;
     }
-    
+
+    @keyframes fadeInUp {
+        0% { opacity: 0; transform: translateY(10px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+
     .staff-card {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
-      padding: 20px;
-      background-color: #f8f9fa; /* Light grey background for each staff card */
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-      transition: transform 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
     
-    /* Hover effect for staff card */
     .staff-card:hover {
-      transform: translateY(-5px);
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); /* Enlarged shadow on hover */
     }
     
-    /* Profile picture */
     .staff-picture-container {
-      margin-bottom: 20px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+        margin-bottom: 20px;
     }
     
     .profile-picture {
-      border: 3px solid #008751; /* Green border around the picture */
-      border-radius: 50%;
+        border: 3px solid #008751;
+        border-radius: 50%;
+        transition: transform 0.3s ease;
+    }
+
+    .profile-picture:hover {
+        transform: scale(1.1); /* Slight zoom effect on profile picture hover */
     }
     
-    /* Staff name styling */
     .staff-name {
-      font-size: 20px;
-      color: #333;
-      font-weight: bold;
-      text-align: center;
-      margin-bottom: 10px;
+        font-size: 20px;
+        color: #333;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 10px;
     }
     
-    /* Staff details */
     .staff-details {
-      text-align: center;
-      font-size: 14px;
-      color: #555;
-      margin-bottom: 20px;
-    }
-    
-    .staff-details p {
-      margin: 5px 0;
+        text-align: center;
+        font-size: 14px;
+        color: #555;
+        margin-bottom: 20px;
     }
     
     .staff-details strong {
-      color: #008751; /* Green for headings */
+        color: #008751;
     }
-    
-    /* Action buttons */
+
     .action-buttons {
-      display: flex;
-      justify-content: space-between;
-      width: 100%;
-    }
-    
-    .action-form {
-      display: inline-block;
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
     }
     
     .btn {
-      padding: 8px 16px;
-      font-size: 14px;
-      border-radius: 5px;
-      border: none;
-      cursor: pointer;
-      width: 100%;
-      transition: background-color 0.3s ease;
+        padding: 8px 16px;
+        font-size: 14px;
+        border-radius: 5px;
+        border: none;
+        cursor: pointer;
+        width: 100%;
+        transition: background-color 0.3s ease, transform 0.3s ease;
     }
     
     .btn-approve {
-      background-color: #008751; /* Green color for approve */
-      color: white;
-      margin-right: 10px;
+        background-color: #008751;
+        color: white;
+        margin-right: 10px;
     }
     
     .btn-approve:hover {
-      background-color: #006f3c;
+        background-color: #006f3c;
+        transform: scale(1.05); /* Slightly enlarge on hover */
     }
     
     .btn-decline {
-      background-color: #e74c3c; /* Red color for decline */
-      color: white;
+        background-color: #e74c3c;
+        color: white;
     }
     
     .btn-decline:hover {
-      background-color: #c0392b;
+        background-color: #c0392b;
+        transform: scale(1.05); /* Slightly enlarge on hover */
     }
-
-    /* New Remove button styling */
+    
     .btn-remove {
-      background-color: #f39c12; /* Orange color for remove */
-      color: white;
+        background-color: #f39c12;
+        color: white;
+    }
+    
+    .btn-remove:hover {
+        background-color: #e67e22;
+        transform: scale(1.05); /* Slightly enlarge on hover */
     }
 
-    .btn-remove:hover {
-      background-color: #e67e22;
+    .btn-reinstate {
+        background-color: #4CAF50; /* Green color */
+        color: white;
+        padding: 10px 20px;
+        font-size: 14px;
+        border-radius: 5px;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.3s ease;
     }
     
-    /* Responsive design */
+    .btn-reinstate:hover {
+        background-color: #45a049; /* Darker green on hover */
+        transform: scale(1.05); /* Slightly enlarge on hover */
+    }
+
     @media (max-width: 768px) {
-      .staff-card {
-        padding: 15px;
-      }
+        .staff-card {
+            padding: 15px;
+        }
     
-      .action-buttons {
-        flex-direction: column;
-        align-items: stretch;
-      }
+        .action-buttons {
+            flex-direction: column;
+            align-items: stretch;
+        }
     
-      .btn {
-        margin-bottom: 10px;
-      }
+        .btn {
+            margin-bottom: 10px;
+        }
     
-      .staff-name {
-        font-size: 18px;
-      }
+        .staff-name {
+            font-size: 18px;
+        }
     }
-    
-  </style>
-  
+</style>
+
+
 {% endblock %}

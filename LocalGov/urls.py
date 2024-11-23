@@ -16,6 +16,7 @@ urlpatterns = [
     path('approve-staff/<int:staff_id>/', views.approve_staff, name='approve_staff'),
     path('remove-staff/<int:staff_id>/', views.remove_staff, name='remove_staff'),
     path('decline-staff/<int:staff_id>/', views.decline_staff, name='decline_staff'),
+    path('reinstate-staff/<int:staff_id>/', views.reinstate_staff, name='reinstate_staff'),
     path('chairman/pending/', views.chairman_pending_posts, name='chairman_pending_posts'),
     path('chairman/post/<int:post_id>/', views.chairman_post_detail, name='chairman_post_detail'),
     path('update_status/<int:post_id>/<str:new_status>/', views.update_staff_post_status, name='update_staff_post_status'),
@@ -28,7 +29,7 @@ urlpatterns = [
     path('get_local_government/<int:state_id>/', views.get_local_governments, name='get_local_government'),
     path('get_chairman/<int:local_government_id>/', views.get_chairmen, name='get_chairman'),
     path('create-staff-post/', views.create_staff_post, name='create_staff_post'),
-     path('staff/pending/', views.staff_pending_posts, name='staff_pending_posts'),
+    path('staff/pending/', views.staff_pending_posts, name='staff_pending_posts'),
 
     path('get-local-governments/<int:state_id>/', views.get_local_governments, name='get_local_governments'),
 

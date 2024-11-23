@@ -4,30 +4,65 @@
 
 {% block content %}
 <div class="pending-posts-container">
-    <h2 class="pending-posts-title">Pending Posts</h2>
-
-    <!-- Staff Request Notification Icon -->
     <div class="staff-request-notification">
         <a href="{% url 'view_staff_requests' %}" class="staff-request-link">
-            <i class="fas fa-bell"></i> Staff Requests
+            <button class="staff-request-btn">
+                <i class="fas fa-bell"></i>
+                <span class="staff-request-counter">{{ staff_request_count }}</span>
+            </button>
         </a>
     </div>
 
-    <ul class="pending-posts-list">
-        {% for post in posts %}
-            <li class="post-item">
-                <a href="{% url 'chairman_post_detail' post.id %}" class="post-link">{{ post.title }}</a>
-            </li>
-        {% endfor %}
-    </ul>
-</div>
-{% endblock %}
+    <h2 class="pending-posts-title">Pending Posts</h2>
 
-<!-- Add Font Awesome CDN link -->
-<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    {% if posts %}
+        <ul class="pending-posts-list">
+            {% for post in posts %}
+                <li class="post-item">
+                    <div class="post-details">
+                        <a href="{% url 'chairman_post_detail' post.id %}" class="post-link">{{ post.title }}</a>
+                        <div class="post-actions">
+                            <form method="post" action="{% url 'chairman_pending_posts' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="post_id" value="{{ post.id }}">
+                                <button type="submit" name="action" value="approve" class="btn-approve">Approve</button>
+                                <button type="submit" name="action" value="reject" class="btn-reject">Reject</button>
+                            </form>
+                        </div>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No pending posts at the moment.</p>
+    {% endif %}
+</div>
+
+<script>
+    function updatePendingCounter() {
+        $.ajax({
+            url: "{% url 'view_staff_requests' %}", // URL of the view
+            type: "GET",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest", // Indicate AJAX request
+            },
+            success: function (response) {
+                // Update the counter in the UI
+                $(".staff-request-counter").text(response.staff_request_count); // Use class selector here
+            },
+            error: function () {
+                console.error("Failed to update the pending requests counter.");
+            }
+        });
+    }
+    
+    // Update the counter every 5 seconds
+    setInterval(updatePendingCounter, 1000); // 1,000ms = 1 seconds
+</script>
+
 
 <style>
-/* Pending Posts Page Styles */
+/* Container Styles */
 .pending-posts-container {
     max-width: 800px;
     margin: auto;
@@ -35,23 +70,89 @@
     background-color: #ffffff;
     border-radius: 8px;
     box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+    position: relative;
 }
 
+/* Title Styles */
 .pending-posts-title {
-    color: #008751; /* Green from the Nigerian flag */
+    color: #008751;
     text-align: center;
     font-size: 2em;
     font-weight: bold;
     margin-bottom: 20px;
+    padding-top: 50px; /* Ensures spacing from the notification button */
 }
 
+/* Notification Button Styles */
+.staff-request-notification {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+}
+
+.staff-request-btn {
+    position: relative;
+    background-color: #008751;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.staff-request-btn i {
+    margin-right: 8px;
+}
+
+/* Counter Badge (Inside Button) */
+.staff-request-counter {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: red;
+    color: white;
+    font-size: 0.8em;
+    font-weight: bold;
+    padding: 5px 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 600px) {
+    .staff-request-notification {
+        top: 5px;
+        right: 5px;
+    }
+
+    .pending-posts-title {
+        font-size: 1.5em; /* Smaller font size for smaller screens */
+        padding-top: 70px; /* Additional padding for spacing */
+    }
+
+    .pending-posts-container {
+        padding: 15px; /* Reduce padding for smaller screens */
+    }
+
+    .staff-request-btn {
+        padding: 8px 15px;
+        font-size: 1em; /* Adjust button size for smaller screens */
+    }
+}
+
+/* Post List Styles */
 .pending-posts-list {
     list-style-type: none;
     padding: 0;
 }
 
 .post-item {
-    background-color: #e6ffe6; /* Light green for a soft, appealing background */
+    background-color: #e6ffe6;
     margin-bottom: 15px;
     padding: 15px;
     border-radius: 5px;
@@ -60,42 +161,51 @@
 
 .post-link {
     text-decoration: none;
-    color: #004d1a; /* Darker green for text */
+    color: #004d1a;
     font-weight: bold;
     font-size: 1.2em;
 }
 
 .post-link:hover {
-    color: #002d0a; /* Even darker green for hover effect */
+    color: #002d0a;
 }
 
 .post-item:hover {
-    background-color: #ccffcc; /* Lighter green on hover */
+    background-color: #ccffcc;
 }
 
-/* Staff Request Notification Icon */
-.staff-request-notification {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    font-size: 2em;
-    z-index: 10;
+/* Post Actions */
+.post-actions {
+    margin-top: 10px;
 }
 
-.staff-request-link {
-    color: #008751; /* Green color for the notification */
-    text-decoration: none;
+.btn-approve,
+.btn-reject {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9em;
+    cursor: pointer;
+    margin-right: 10px;
 }
 
-.staff-request-link:hover {
-    color: #004d1a; /* Darker green on hover */
+.btn-approve {
+    background-color: #008751;
+    color: #ffffff;
 }
 
-.staff-request-link i {
-    color: #008751; /* Apply green color to the bell icon */
+.btn-reject {
+    background-color: #ff4d4d;
+    color: #ffffff;
 }
 
-.staff-request-link:hover i {
-    color: #004d1a; /* Darker green on hover for the bell icon */
+.btn-approve:hover {
+    background-color: #006c40;
+}
+
+.btn-reject:hover {
+    background-color: #cc0000;
 }
 </style>
+
+{% endblock %}

@@ -2,167 +2,220 @@
 {% load static %}
 
 {% block content %}
-  <style>
+<style>
     /* General Profile Container */
     .profile-container {
-      background-color: #ffffff;
-      padding: 40px;
-      border-radius: 15px;
-      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
-      max-width: 900px;
-      margin: 50px auto;
-      overflow: hidden;
+        background-color: #ffffff;
+        padding: 40px;
+        border-radius: 15px;
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+        max-width: 900px;
+        margin: 50px auto;
+        overflow: hidden;
     }
 
     /* Profile Heading */
     h1 {
-      text-align: center;
-      color: #008751; /* Nigerian flag green */
-      font-size: 36px;
-      margin-bottom: 25px;
-      font-weight: bold;
-      text-transform: uppercase;
+        text-align: center;
+        color: #008751; /* Nigerian flag green */
+        font-size: 36px;
+        margin-bottom: 25px;
+        font-weight: bold;
+        text-transform: uppercase;
     }
 
     /* Profile Information Section */
     .profile-info p {
-      font-size: 18px;
-      line-height: 1.7;
-      margin-bottom: 15px;
-      color: #555;
+        font-size: 18px;
+        line-height: 1.7;
+        margin-bottom: 15px;
+        color: #555;
     }
 
     .profile-info strong {
-      color: #008751; /* Nigerian flag green */
+        color: #008751; /* Nigerian flag green */
     }
 
     /* Profile Image */
     .profile-header {
-      text-align: center;
-      margin-bottom: 30px;
+        text-align: center;
+        margin-bottom: 30px;
     }
 
     .profile-picture {
-      border: 3px solid #008751; /* Nigerian flag green */
-      border-radius: 50%;
-      transition: transform 0.3s ease;
+        border: 3px solid #008751; /* Nigerian flag green */
+        border-radius: 50%;
+        transition: transform 0.3s ease;
     }
 
     .profile-picture:hover {
-      transform: scale(1.05); /* Slight zoom effect */
+        transform: scale(1.05); /* Slight zoom effect */
     }
 
     .profile-name {
-      font-size: 24px;
-      font-weight: bold;
-      color: #333;
-      margin-top: 15px;
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+        margin-top: 15px;
     }
 
     .profile-email {
-      font-size: 16px;
-      color: #777;
+        font-size: 16px;
+        color: #777;
     }
 
     /* Approval Status */
     .approval-status {
-      font-size: 18px;
-      margin-top: 20px;
-      text-align: center;
+        font-size: 18px;
+        margin-top: 20px;
+        text-align: center;
     }
 
     .approved-status {
-      color: #008751; /* Nigerian flag green */
-      font-weight: bold;
+        color: #008751; /* Green for approved */
+        font-weight: bold;
     }
 
     .pending-status {
-      color: #f39c12; /* Orange for pending */
-      font-weight: bold;
+        color: #f39c12; /* Orange for pending */
+        font-weight: bold;
+    }
+
+    .removed-status {
+        color: #d9534f; /* Red for removed */
+        font-weight: bold;
+    }
+
+    .declined-status {
+        color: #d9534f; /* Red for declined */
+        font-weight: bold;
     }
 
     /* Action Button Styles */
     .btn {
-      display: inline-block;
-      background-color: #008751; /* Nigerian flag green */
-      color: white;
-      padding: 14px 28px;
-      border-radius: 50px;
-      text-align: center;
-      text-decoration: none;
-      font-size: 18px;
-      margin: 15px 10px;
-      transition: background-color 0.3s ease, transform 0.2s ease;
+        display: inline-block;
+        background-color: #008751; /* Nigerian flag green */
+        color: white;
+        padding: 14px 28px;
+        border-radius: 50px;
+        text-align: center;
+        text-decoration: none;
+        font-size: 18px;
+        margin: 15px 10px;
+        transition: background-color 0.3s ease, transform 0.2s ease;
     }
 
     .btn:hover {
-      background-color: #005f3b; /* Darker green on hover */
-      transform: translateY(-3px); /* Slight lift effect */
+        background-color: #005f3b; /* Darker green on hover */
+        transform: translateY(-3px); /* Slight lift effect */
+    }
+
+    /* Status Button - Positioning and Colors */
+    .status-button {
+        display: inline-block;
+        padding: 10px 20px;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 25px;
+        margin-top: 15px;
+    }
+
+    .approved-status-btn {
+        background-color: #008751; /* Green for approved */
+        color: white;
+    }
+
+    .pending-status-btn {
+        background-color: #f39c12; /* Orange for pending */
+        color: white;
+    }
+
+    .removed-status-btn {
+        background-color: #d9534f; /* Red for removed */
+        color: white;
+    }
+
+    .declined-status-btn {
+        background-color: #d9534f; /* Red for declined */
+        color: white;
     }
 
     /* Buttons Container */
     .profile-actions {
-      text-align: center;
-      margin-top: 40px;
+        text-align: center;
+        margin-top: 40px;
     }
 
     /* Spacing Between Sections */
     .profile-info {
-      margin-bottom: 30px;
+        margin-bottom: 30px;
     }
 
     /* Media Queries for responsiveness */
     @media (max-width: 768px) {
-      .profile-container {
-        padding: 20px;
-      }
+        .profile-container {
+            padding: 20px;
+        }
 
-      h1 {
-        font-size: 30px;
-      }
+        h1 {
+            font-size: 30px;
+        }
 
-      .profile-info p {
-        font-size: 16px;
-      }
+        .profile-info p {
+            font-size: 16px;
+        }
 
-      .btn {
-        padding: 12px 24px;
-        font-size: 16px;
-      }
+        .btn {
+            padding: 12px 24px;
+            font-size: 16px;
+        }
     }
-  </style>
+</style>
 
-  <div class="profile-container">
-      <h1>Staff Profile</h1>
+<div class="profile-container">
+    <!-- Profile Header -->
+    <div class="profile-header">
+        {% if staff.profile_picture %}
+            <img src="{{ staff.profile_picture.url }}" alt="{{ staff.user.username }}'s Profile Picture" class="rounded-circle profile-picture mb-3" style="width: 180px; height: 180px;">
+        {% else %}
+            <img src="{% static 'img/avatar.jpg' %}" alt="Default Profile Picture" class="rounded-circle profile-picture mb-3" style="width: 180px; height: 180px;">
+        {% endif %}
+        <h2 class="profile-name">{{ staff.user.first_name }} {{ staff.user.last_name }}</h2>
+        <p class="profile-email">{{ staff.user.email }}</p>
 
-      <div class="profile-header">
-          {% if staff.profile_picture %}
-              <img src="{{ staff.profile_picture.url }}" alt="{{ staff.user.username }}'s Profile Picture" class="rounded-circle profile-picture mb-3" style="width: 180px; height: 180px;">
-          {% else %}
-              <img src="{% static 'img/avatar.jpg' %}" alt="Default Profile Picture" class="rounded-circle profile-picture mb-3" style="width: 180px; height: 180px;">
-          {% endif %}
-          <h2 class="profile-name">{{ staff.user.first_name }} {{ staff.user.last_name }}</h2>
-          <p class="profile-email">{{ staff.user.email }}</p>
-      </div>
+        <!-- Status Display -->
+        <div class="status-button
+        {% if staff.status == 'approved' %} approved-status-btn 
+        {% elif staff.status == 'pending' %} pending-status-btn 
+        {% elif staff.status == 'declined' %} declined-status-btn 
+        {% elif staff.status == 'removed' %} removed-status-btn 
+        {% endif %}">
+        {% if staff.status == 'approved' %}
+            Approved
+        {% elif staff.status == 'pending' %}
+            Pending
+        {% elif staff.status == 'declined' %}
+            Declined
+        {% elif staff.status == 'removed' %}
+            Removed
+        {% endif %}
+        </div>
 
-      <div class="profile-info">
-          <p><strong>Username:</strong> {{ staff.user.username }}</p>
-          <p><strong>State:</strong> {{ staff.state.name }}</p>
-          <p><strong>Local Government:</strong> {{ staff.local_government.name }}</p>
-          <p><strong>Desired Chairman:</strong> {{ staff.desired_chairman.user.username }}</p>
-      </div>
 
-      <div class="approval-status">
-          {% if staff.is_approved %}
-              <p class="approved-status">Your request to work for {{ staff.desired_chairman.user.username }} has been approved!</p>
-          {% else %}
-              <p class="pending-status">Your request to work for {{ staff.desired_chairman.user.username }} is pending approval.</p>
-          {% endif %}
-      </div>
+    </div>
 
-      <div class="profile-actions">
-          <a href="{% url 'edit_staff_profile' %}" class="btn">Edit Profile</a>
-          <a href="{% url 'create_staff_post' %}" class="btn">Create Post</a>
-      </div>
-  </div>
+    <!-- Profile Information -->
+    <div class="profile-info">
+        <p><strong>Username:</strong> {{ staff.user.username }}</p>
+        <p><strong>State:</strong> {{ staff.state.name }}</p>
+        <p><strong>Local Government:</strong> {{ staff.local_government.name }}</p>
+        <p><strong>Desired Chairman:</strong> {{ staff.desired_chairman.user.username }}</p>
+    </div>
+
+    <!-- Profile Actions -->
+    <div class="profile-actions">
+        <a href="{% url 'edit_staff_profile' %}" class="btn">Edit Profile</a>
+        <a href="{% url 'create_staff_post' %}" class="btn">Create Post</a>
+    </div>
+</div>
 {% endblock %}
