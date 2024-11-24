@@ -107,20 +107,19 @@ class StaffPostForm(forms.ModelForm):
         model = StaffPost
         fields = [
             'title', 'description', 'image', 'video', 
-            'state', 'local_government', 'author', 
-            'chairman', 'location', 'latitude', 'longitude', 'status'
+            'state', 'local_government', 
+            'location', 'latitude', 'longitude'
         ]
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
             'state': forms.Select(attrs={'class': 'form-control'}),
             'local_government': forms.Select(attrs={'class': 'form-control'}),
-            'author': forms.Select(attrs={'class': 'form-control'}),
-            'chairman': forms.Select(attrs={'class': 'form-control'}),
             'location': forms.TextInput(attrs={'class': 'form-control'}),
             'latitude': forms.NumberInput(attrs={'class': 'form-control'}),
             'longitude': forms.NumberInput(attrs={'class': 'form-control'}),
         }
+
 
 
 class PostForm(forms.ModelForm):

@@ -36,13 +36,12 @@
 
         <!-- Dynamically show the state and local government -->
         <div class="form-group mb-3">
-            <label for="state">State</label>
-            <input type="text" class="form-control" id="state" value="{{ staff_profile.state.name }}" disabled>
+            <input type="hidden" name="state" value="{{ staff_profile.state.id }}">
         </div>
+        
 
         <div class="form-group mb-3">
-            <label for="local_government">Local Government</label>
-            <input type="text" class="form-control" id="local_government" value="{{ staff_profile.local_government.name }}" disabled>
+            <input type="hidden" name="local_government" value="{{ staff_profile.local_government.id }}">
         </div>
 
         <div class="form-group mb-3">

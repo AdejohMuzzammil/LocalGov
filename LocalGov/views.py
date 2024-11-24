@@ -84,7 +84,9 @@ def login_view(request):
 
 def home(request):
     posts = Post.objects.all()  
-    return render(request, 'home.html', {'posts': posts})
+    approved_posts = StaffPost.objects.filter(status='approved')
+    return render(request, 'home.html', 
+                  {'posts': posts, 'approved_posts': approved_posts})
 
 
 @login_required
@@ -107,19 +109,40 @@ def create_chairman_profile(request):
 @login_required
 def chairman_profile(request):
     try:
+        # Retrieve the chairman's profile or create a new one if not found
         profile = ChairmanProfile.objects.get(user=request.user)
     except ChairmanProfile.DoesNotExist:
         profile = ChairmanProfile(user=request.user)
 
     if request.method == 'POST':
+        # Handle profile update
         form = ChairmanProfileForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
-            form.save()  
+            form.save()
             messages.success(request, 'Your Chairman profile has been updated successfully!')
-            return redirect('chairman_profile')  
+            return redirect('chairman_profile')
     else:
         form = ChairmanProfileForm(instance=profile)
-    return render(request, 'chairman/profile.html', {'form': form, 'profile': profile})
+
+    # Fetch pending posts (from StaffPost) and staff requests (from StaffProfile)
+    pending_posts = StaffPost.objects.filter(chairman=profile, status='pending')
+    pending_requests = StaffProfile.objects.filter(desired_chairman=profile, status='pending')
+
+    # Count the total pending notifications
+    total_pending_notifications = pending_posts.count() + pending_requests.count()
+
+    # Handle AJAX request for updating the notification counter
+    if request.method == 'GET' and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'total_pending_notifications': total_pending_notifications})
+
+    # Render the template for normal requests
+    return render(request, 'chairman/profile.html', {
+        'form': form,
+        'profile': profile,
+        'pending_posts': pending_posts,
+        'pending_requests': pending_requests,
+        'total_pending_notifications': total_pending_notifications,
+    })
 
 
 @login_required
@@ -178,19 +201,30 @@ def chairman_pending_posts(request):
 
         if request.method == 'POST':
             post_id = request.POST.get('post_id')
-            action = request.POST.get('action')  
+            action = request.POST.get('action')
             post = get_object_or_404(StaffPost, id=post_id)
 
             if action == 'approve':
+                # Approve the post
                 post.status = 'approved'
                 post.save()
+
+                # Show success message
                 messages.success(request, f"Post '{post.title}' approved.")
+
+                # Redirect to the home page
+                return redirect('home')  
+
             elif action == 'reject':
+                # Reject the post
                 post.status = 'rejected'
                 post.save()
+
+                # Show success message
                 messages.success(request, f"Post '{post.title}' rejected.")
 
-            return redirect('chairman_pending_posts')  
+                # Redirect to the chairman_pending_posts page
+                return redirect('chairman_pending_posts')
 
     except ChairmanProfile.DoesNotExist:
         messages.error(request, "You are not authorized to approve or reject posts.")
@@ -487,6 +521,7 @@ def staff_profile(request):
 def edit_staff_profile(request):
     staff = get_object_or_404(StaffProfile, user=request.user)
 
+    # Check the staff profile's status
     if staff.status == 'approved':
         messages.info(request, 'Your profile has been approved and cannot be edited.')
         return redirect('staff_profile')
@@ -505,43 +540,55 @@ def edit_staff_profile(request):
         if form.is_valid():
             staff_profile = form.save(commit=False)
 
+            # Update profile picture if provided
             if 'profile_picture' in request.FILES:
                 staff_profile.profile_picture = request.FILES['profile_picture']
 
             state = staff_profile.state
             local_government = staff_profile.local_government
 
-            chairman_profile = ChairmanProfile.objects.filter(
+            # Fetch the new chairman profile
+            new_chairman = ChairmanProfile.objects.filter(
                 state=state, local_government=local_government
             ).first()
 
-            if chairman_profile:
-                staff_profile.desired_chairman = chairman_profile
+            # Remove staff from previous chairman's requests
+            if staff_profile.desired_chairman and staff_profile.desired_chairman != new_chairman:
+                staff_profile.desired_chairman.staff_requests.remove(staff_profile.user)
 
-                if staff_profile.status == 'pending':
-                    chairman_profile.staff_requests.add(staff_profile.user)  
-                    chairman_profile.save()
+            # Update the desired chairman
+            staff_profile.desired_chairman = new_chairman
 
+            # Add staff to the new chairman's requests if status is 'pending'
+            if new_chairman and staff_profile.status == 'pending':
+                if not new_chairman.staff_requests.filter(id=staff_profile.user.id).exists():
+                    new_chairman.staff_requests.add(staff_profile.user)
+
+            # Update staff status
             if staff_profile.is_approved:
-                staff_profile.status = 'approved'  
+                staff_profile.status = 'approved'
             else:
-                staff_profile.status = 'pending'  
-                staff_profile.is_approved = False  
+                staff_profile.status = 'pending'
+                staff_profile.is_approved = False
 
+            # Save changes
             staff_profile.save()
-            messages.success(request, 'Your profile has been successfully updated. And your request was sent to the chairman to confirm your profile')
+            messages.success(
+                request,
+                'Your profile has been successfully updated. A request was sent to the chairman for approval.'
+            )
             return redirect('staff_profile')
 
         else:
             messages.error(request, 'There was an error in your form. Please check the details and try again.')
     else:
         form = EditStaffProfileForm(instance=staff)
+
     context = {
         'form': form,
-        'staff': staff 
+        'staff': staff,
     }
     return render(request, 'staff/edit_staff_profile.html', context)
-
 
 
 @login_required
@@ -622,10 +669,11 @@ def create_staff_post(request):
             staff_post.status = 'pending'  
             staff_post.author = request.user  
             staff_post.chairman = staff_profile.desired_chairman  
-            staff_post.save()
+            staff_post.save() 
             messages.success(request, "Post created successfully and is pending approval.")
             return redirect('staff_profile')  
-
+        else:
+            messages.error(request, "There was an error creating the post. Please check the form for errors.")
     else:
         form = StaffPostForm()
 
@@ -633,6 +681,25 @@ def create_staff_post(request):
         'form': form,
         'staff_profile': staff_profile
     })
+
+
+@login_required
+def reject_staff_post(request, post_id):
+    if request.method == 'POST':
+        feedback = request.POST.get('feedback')
+
+        # Fetch the post or return a 404 error if not found
+        post = get_object_or_404(StaffPost, id=post_id)
+        
+        # Process rejection logic
+        post.status = 'rejected'  
+        post.feedback = feedback  
+        post.save()
+
+        
+        return redirect('chairman_pending_posts')
+    return redirect('chairman_pending_posts')
+
 
 
 @login_required

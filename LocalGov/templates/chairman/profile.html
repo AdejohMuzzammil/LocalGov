@@ -5,22 +5,28 @@
 
 {% block content %}
 <div class="container mt-5">
+    <!-- Profile Header Section -->
     <div class="profile-header text-center">
         {% if profile.profile_picture %}
-            <img src="{{ profile.profile_picture.url }}" alt="{{ profile.user.username }}'s Profile Picture" class="rounded-circle profile-picture mb-3" style="width: 150px; height: 150px;">
+            <img src="{{ profile.profile_picture.url }}" alt="{{ profile.user.username }}'s Profile Picture" 
+                 class="rounded-circle profile-picture mb-3">
         {% else %}
-            <img src="{% static 'img/avatar.jpg' %}" alt="Default Profile Picture" class="rounded-circle profile-picture mb-3" style="width: 150px; height: 150px;">
+            <img src="{% static 'img/avatar.jpg' %}" alt="Default Profile Picture" 
+                 class="rounded-circle profile-picture mb-3">
         {% endif %}
         <h2 class="profile-name">{{ profile.user.first_name }} {{ profile.user.last_name }}</h2>
         <p class="profile-email">{{ profile.email }}</p>
 
-        <a href="{% url 'chairman_pending_posts' %}" class="notification-link">
-            <i class="fas fa-bell"></i><br>
+        <!-- Notification Link with Counter -->
+        <a href="{% url 'chairman_pending_posts' %}" class="notification-link position-relative">
+            <i class="fas fa-bell notification-icon"></i>
+            <span class="notification-counter badge bg-danger">{{ total_pending_notifications }}</span>
             Notifications
         </a>
     </div>
 
-    <div class="profile-details text-center mt-4">
+    <!-- Profile Details Section -->
+    <div class="profile-details mt-4">
         <h5><strong>State:</strong></h5>
         <p>{{ profile.state }}</p>
 
@@ -34,50 +40,199 @@
         <p>{{ profile.bio }}</p>
     </div>
 
+    <!-- Action Buttons -->
     <div class="text-center mt-4">
         <a href="{% url 'edit-profile' %}" class="btn btn-primary">Edit Profile</a>
         <a href="{% url 'create_post' %}" class="btn btn-success">Create Post</a>
     </div>
 </div>
-{% endblock %}
 
+<!-- Styles for the Profile Page -->
 <style>
-/* Profile Page Styles */
-.container {
-    max-width: 600px;
-    margin: auto;
-    padding: 20px;
-}
-.profile-header {
-    margin-bottom: 30px;
-}
-.profile-picture {
-    border: 4px solid #007bff;
-    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
-}
-.profile-name {
-    font-weight: bold;
-    font-size: 1.8em;
-}
-.profile-email {
-    color: #6c757d;
-    font-size: 1.1em;
-    margin-bottom: 20px;
-}
-.profile-details h5 {
-    font-weight: bold;
-    color: #007bff;
-    margin-top: 15px;
-}
-.profile-details p {
-    font-size: 1em;
-    color: #333;
-    margin-bottom: 10px;
-}
-.btn {
-    margin: 10px;
-    padding: 10px 20px;
-    border-radius: 5px;
-    font-size: 1em;
-}
+    .container {
+        max-width: 700px;
+        background-color: #f9f9f9;
+        border-radius: 10px;
+        padding: 30px;
+        box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .profile-header {
+        margin-bottom: 30px;
+    }
+
+    .profile-picture {
+        width: 150px;
+        height: 150px;
+        border: 4px solid #007bff;
+        box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .profile-name {
+        font-weight: 600;
+        font-size: 1.8em;
+        color: #333;
+    }
+
+    .profile-email {
+        color: #6c757d;
+        font-size: 1.1em;
+        margin-bottom: 20px;
+    }
+
+    .notification-link {
+        color: #007bff;
+        text-decoration: none;
+        font-size: 1.2em;
+        font-weight: bold;
+        position: relative;
+    }
+
+    .notification-icon {
+        font-size: 1.5em;
+    }
+
+    .notification-counter {
+        position: absolute;
+        top: -8px;
+        right: -15px;
+        font-size: 0.9em;
+        padding: 5px 7px;
+        border-radius: 50%;
+        color: white;
+    }
+
+    .profile-details {
+        margin-top: 20px;
+        text-align: center;
+    }
+
+    .profile-details h5 {
+        font-weight: bold;
+        color: #007bff;
+        margin-top: 15px;
+    }
+
+    .profile-details p {
+        font-size: 1em;
+        color: #555;
+        margin-bottom: 15px;
+    }
+
+    .btn {
+        margin: 10px;
+        padding: 12px 20px;
+        border-radius: 5px;
+        font-size: 1em;
+        transition: background-color 0.3s, box-shadow 0.3s;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-success:hover {
+        background-color: #218838;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Media Queries for Responsiveness */
+    @media (max-width: 768px) {
+        .container {
+            max-width: 90%;
+            padding: 20px;
+        }
+
+        .profile-picture {
+            width: 120px;
+            height: 120px;
+        }
+
+        .profile-name {
+            font-size: 1.5em;
+        }
+
+        .profile-email {
+            font-size: 1em;
+        }
+
+        .notification-link {
+            font-size: 1em;
+        }
+
+        .notification-icon {
+            font-size: 1.3em;
+        }
+
+        .btn {
+            font-size: 0.9em;
+            padding: 10px 15px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .profile-picture {
+            width: 100px;
+            height: 100px;
+        }
+
+        .profile-name {
+            font-size: 1.3em;
+        }
+
+        .profile-email {
+            font-size: 0.9em;
+        }
+
+        .notification-link {
+            font-size: 0.9em;
+        }
+
+        .notification-icon {
+            font-size: 1.2em;
+        }
+
+        .btn {
+            font-size: 0.8em;
+            padding: 8px 12px;
+        }
+
+        .profile-details h5 {
+            font-size: 0.9em;
+        }
+
+        .profile-details p {
+            font-size: 0.85em;
+        }
+    }
 </style>
+
+
+<!-- JavaScript for Updating Notification Counter -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        function refreshNotificationCounter() {
+            $.ajax({
+                url: '{% url "chairman_profile" %}', 
+                type: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest', 
+                },
+                dataType: 'json',
+                success: function(data) {
+                    $('.notification-counter').text(data.total_pending_notifications);
+                },
+                error: function() {
+                    console.error('Failed to refresh notifications');
+                }
+            });
+        }
+
+        // Automatically refresh every 5 seconds
+        setInterval(refreshNotificationCounter, 5000);
+    });
+</script>
+
+{% endblock %}

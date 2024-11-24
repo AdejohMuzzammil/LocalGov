@@ -21,6 +21,8 @@ urlpatterns = [
     path('chairman/post/<int:post_id>/', views.chairman_post_detail, name='chairman_post_detail'),
     path('update_status/<int:post_id>/<str:new_status>/', views.update_staff_post_status, name='update_staff_post_status'),
     path('chairman/archived/', views.chairman_archived_posts, name='chairman_archived_posts'),
+    path('reject_staff_post/<int:post_id>/', views.reject_staff_post, name='reject_staff_post'),
+    #path('unauthorized/', views.unauthorized, name='unauthorized'),
 
     path('post/delete/<int:post_id>/', views.delete_post, name='delete_post'),
 

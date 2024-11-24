@@ -4,6 +4,7 @@
 
 {% block content %}
 <div class="pending-posts-container">
+    <!-- Notification for pending staff requests -->
     <div class="staff-request-notification">
         <a href="{% url 'view_staff_requests' %}" class="staff-request-link">
             <button class="staff-request-btn">
@@ -20,16 +21,53 @@
             {% for post in posts %}
                 <li class="post-item">
                     <div class="post-details">
-                        <a href="{% url 'chairman_post_detail' post.id %}" class="post-link">{{ post.title }}</a>
+                        <h3 class="post-title">{{ post.title }}</h3>
+                        <p class="post-content">{{ post.content }}</p>
+
+                        <!-- Render Staff's Photo Dynamically -->
+                        {% if post.staff_photo %}
+                            <img src="{{ post.staff_photo.url }}" alt="Staff Photo" class="staff-photo">
+                        {% endif %}
+
+                        <!-- Render Staff's Description Dynamically -->
+                        {% if post.staff_description %}
+                            <p class="staff-description">{{ post.staff_description }}</p>
+                        {% endif %}
+                        
+                        <!-- Render Post's Image -->
+                        {% if post.photo %}
+                            <img src="{{ post.photo.url }}" alt="Post Image" class="post-photo">
+                        {% endif %}
+
+                        <!-- Render Post's Video -->
+                        {% if post.video %}
+                            <video controls class="post-video">
+                                <source src="{{ post.video.url }}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        {% endif %}
+
                         <div class="post-actions">
                             <form method="post" action="{% url 'chairman_pending_posts' %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="post_id" value="{{ post.id }}">
-                                <button type="submit" name="action" value="approve" class="btn-approve">Approve</button>
-                                <button type="submit" name="action" value="reject" class="btn-reject">Reject</button>
+                                <button type="submit" name="action" value="approve" class="btn-approve" id="approve-btn-{{ post.id }}">Approve</button>
+                                <button type="button" class="btn-reject" id="reject-btn-{{ post.id }}" data-post-id="{{ post.id }}" onclick="showFeedbackForm({{ post.id }})">Reject</button>
+
                             </form>
                         </div>
                     </div>
+
+                    <!-- Hidden Feedback Form for Rejection -->
+                    <div id="feedback-form-{{ post.id }}" class="feedback-form hidden">
+                        <form method="post" action="{% url 'reject_staff_post' post.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="post_id" value="{{ post.id }}">
+                            <textarea name="feedback" placeholder="Enter rejection feedback" required></textarea>
+                            <button type="submit" class="btn-submit-feedback">Submit Feedback</button>
+                        </form>                        
+                    </div>
+                    
                 </li>
             {% endfor %}
         </ul>
@@ -38,174 +76,278 @@
     {% endif %}
 </div>
 
+
+
+<style>
+    /* Container Styles */
+    .pending-posts-container {
+        max-width: 800px;
+        margin: auto;
+        padding: 20px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+        position: relative;
+    }
+
+    /* Title Styles */
+    .pending-posts-title {
+        color: #008751;
+        text-align: center;
+        font-size: 2em;
+        font-weight: bold;
+        margin-bottom: 20px;
+        padding-top: 50px; /* Ensures spacing from the notification button */
+    }
+
+    /* Notification Button Styles */
+    .staff-request-notification {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 10;
+    }
+
+    .staff-request-btn {
+        position: relative;
+        background-color: #008751;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1.2em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .staff-request-btn i {
+        margin-right: 8px;
+    }
+
+    /* Counter Badge (Inside Button) */
+    .staff-request-counter {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background-color: red;
+        color: white;
+        font-size: 0.8em;
+        font-weight: bold;
+        padding: 5px 8px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 600px) {
+        .staff-request-notification {
+            top: 5px;
+            right: 5px;
+        }
+
+        .pending-posts-title {
+            font-size: 1.5em; /* Smaller font size for smaller screens */
+            padding-top: 70px; /* Additional padding for spacing */
+        }
+
+        .pending-posts-container {
+            padding: 15px; /* Reduce padding for smaller screens */
+        }
+
+        .staff-request-btn {
+            padding: 8px 15px;
+            font-size: 1em; /* Adjust button size for smaller screens */
+        }
+    }
+
+    @media (max-width: 400px) {
+        .post-video {
+            max-width: 100%;
+            height: auto;
+        }
+    }
+
+    /* Post List Styles */
+    .pending-posts-list {
+        list-style-type: none;
+        padding: 0;
+    }
+
+    .post-item {
+        background-color: #e6ffe6;
+        margin-bottom: 15px;
+        padding: 15px;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+    }
+
+    .post-link {
+        text-decoration: none;
+        color: #004d1a;
+        font-weight: bold;
+        font-size: 1.2em;
+    }
+
+    .post-link:hover {
+        color: #002d0a;
+    }
+
+    .post-item:hover {
+        background-color: #ccffcc;
+    }
+
+    /* Post Actions */
+    .post-actions {
+        margin-top: 20px;
+        display: flex;
+        justify-content: space-between; 
+        align-items: center; 
+        flex-direction: column; 
+        gap: 15px; 
+    }
+
+    /* Button Styles */
+    .btn-approve,
+    .btn-reject {
+        padding: 12px 20px; 
+        border: none;
+        border-radius: 8px; 
+        font-size: 1em; 
+        cursor: pointer;
+        transition: background-color 0.3s, transform 0.2s;  
+        display: block; 
+        width: 100%;
+        text-align: center; 
+        margin-bottom: 15px;
+    }
+
+    .btn-approve {
+        background-color: #008751; /* Green color for approve */
+        color: white;
+    }
+
+    .btn-reject {
+        background-color: #ff4d4d; /* Red color for reject */
+        color: white;
+    }
+
+    /* Hover and Active Effects */
+    .btn-approve:hover {
+        background-color: #006c40;
+        transform: scale(1.05); /* Slight zoom effect on hover */
+    }
+
+    .btn-reject:hover {
+        background-color: #cc0000;
+        transform: scale(1.05); /* Slight zoom effect on hover */
+    }
+
+    /* Button Active State */
+    .btn-approve:active,
+    .btn-reject:active {
+        transform: scale(1); /* Prevent excessive scaling */
+    }
+
+    /* Feedback Form Styles */
+    .feedback-form {
+        margin-top: 15px;
+        background-color: #f8f8f8;
+        padding: 15px;
+        border-radius: 5px;
+        display: none; /* Initially hidden */
+        opacity: 0; /* Hidden initially for animation */
+        transition: opacity 0.5s ease-in-out; /* Smooth fade-in effect */
+    }
+
+    .feedback-form textarea {
+        width: 100%;
+        height: 100px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 1em;
+        margin-bottom: 10px;
+    }
+
+    .feedback-form button {
+        background-color: #ff4d4d;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        font-size: 1.2em;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .feedback-form button:hover {
+        background-color: #cc0000;
+    }
+
+    /* Hidden Class */
+    .hidden {
+        display: none;
+    }
+</style>
+
+
 <script>
+    // Update the pending staff request count dynamically
     function updatePendingCounter() {
         $.ajax({
-            url: "{% url 'view_staff_requests' %}", // URL of the view
+            url: "{% url 'view_staff_requests' %}",
             type: "GET",
             headers: {
-                "X-Requested-With": "XMLHttpRequest", // Indicate AJAX request
+                "X-Requested-With": "XMLHttpRequest",
             },
             success: function (response) {
-                // Update the counter in the UI
-                $(".staff-request-counter").text(response.staff_request_count); // Use class selector here
+                $(".staff-request-counter").text(response.staff_request_count);
             },
             error: function () {
                 console.error("Failed to update the pending requests counter.");
             }
         });
     }
-    
-    // Update the counter every 5 seconds
-    setInterval(updatePendingCounter, 1000); // 1,000ms = 1 seconds
+    setInterval(updatePendingCounter, 1000);
+
+
+    // Show/Hide the feedback form when Reject button is clicked
+    function showFeedbackForm(postId) {
+        // Hide approve and reject buttons
+        const approveBtn = document.getElementById(`approve-btn-${postId}`);
+        const rejectBtn = document.getElementById(`reject-btn-${postId}`);
+
+        if (approveBtn) approveBtn.style.display = 'none';
+        if (rejectBtn) rejectBtn.style.display = 'none';
+        
+        // Show the feedback form
+        const form = document.getElementById(`feedback-form-${postId}`);
+        if (form) {
+            form.classList.remove('hidden');
+            // Optional: Add animation/fade-in effect
+            form.style.display = 'block';
+            setTimeout(function() {
+                form.style.opacity = 1;
+            }, 50);
+        } else {
+            console.error("Feedback form not found for post ID: " + postId);
+        }
+    }
+
+    // Using event delegation for dynamically created reject buttons
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle all reject button clicks
+        document.querySelectorAll('.btn-reject').forEach(function(button) {
+            button.addEventListener('click', function(event) {
+                const postId = event.target.getAttribute('data-post-id');
+                showFeedbackForm(postId);
+            });
+        });
+    });
+
+
 </script>
-
-
-<style>
-/* Container Styles */
-.pending-posts-container {
-    max-width: 800px;
-    margin: auto;
-    padding: 20px;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
-    position: relative;
-}
-
-/* Title Styles */
-.pending-posts-title {
-    color: #008751;
-    text-align: center;
-    font-size: 2em;
-    font-weight: bold;
-    margin-bottom: 20px;
-    padding-top: 50px; /* Ensures spacing from the notification button */
-}
-
-/* Notification Button Styles */
-.staff-request-notification {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 10;
-}
-
-.staff-request-btn {
-    position: relative;
-    background-color: #008751;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1.2em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.staff-request-btn i {
-    margin-right: 8px;
-}
-
-/* Counter Badge (Inside Button) */
-.staff-request-counter {
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    background-color: red;
-    color: white;
-    font-size: 0.8em;
-    font-weight: bold;
-    padding: 5px 8px;
-    border-radius: 50%;
-    display: inline-block;
-}
-
-/* Responsive Adjustments */
-@media (max-width: 600px) {
-    .staff-request-notification {
-        top: 5px;
-        right: 5px;
-    }
-
-    .pending-posts-title {
-        font-size: 1.5em; /* Smaller font size for smaller screens */
-        padding-top: 70px; /* Additional padding for spacing */
-    }
-
-    .pending-posts-container {
-        padding: 15px; /* Reduce padding for smaller screens */
-    }
-
-    .staff-request-btn {
-        padding: 8px 15px;
-        font-size: 1em; /* Adjust button size for smaller screens */
-    }
-}
-
-/* Post List Styles */
-.pending-posts-list {
-    list-style-type: none;
-    padding: 0;
-}
-
-.post-item {
-    background-color: #e6ffe6;
-    margin-bottom: 15px;
-    padding: 15px;
-    border-radius: 5px;
-    transition: background-color 0.3s;
-}
-
-.post-link {
-    text-decoration: none;
-    color: #004d1a;
-    font-weight: bold;
-    font-size: 1.2em;
-}
-
-.post-link:hover {
-    color: #002d0a;
-}
-
-.post-item:hover {
-    background-color: #ccffcc;
-}
-
-/* Post Actions */
-.post-actions {
-    margin-top: 10px;
-}
-
-.btn-approve,
-.btn-reject {
-    padding: 10px 15px;
-    border: none;
-    border-radius: 4px;
-    font-size: 0.9em;
-    cursor: pointer;
-    margin-right: 10px;
-}
-
-.btn-approve {
-    background-color: #008751;
-    color: #ffffff;
-}
-
-.btn-reject {
-    background-color: #ff4d4d;
-    color: #ffffff;
-}
-
-.btn-approve:hover {
-    background-color: #006c40;
-}
-
-.btn-reject:hover {
-    background-color: #cc0000;
-}
-</style>
 
 {% endblock %}
