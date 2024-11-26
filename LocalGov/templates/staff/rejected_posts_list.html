@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Rejected Posts{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Rejected Posts</h2>
+
+    {% if rejected_posts %}
+        <div class="list-group">
+            {% for post in rejected_posts %}
+                <div class="list-group-item mb-4 shadow-sm p-4 rounded">
+                    <h5 class="post-title mb-3">{{ post.title }}</h5>
+                    <p class="post-feedback"><strong>Feedback:</strong> {{ post.feedback }}</p>
+                    <p class="post-location"><strong>Location:</strong> {{ post.location }}</p>
+                    <p class="text-muted small mb-4">Rejected on {{ post.date_posted|date:"M d, Y H:i" }}</p>
+                    
+                    <!-- Full-width Edit Button -->
+                    <div class="edit-button-wrapper">
+                        <a href="{% url 'edit_post' post_id=post.id %}" class="btn btn-nigeria btn-lg btn-block">Edit Post</a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center" role="alert">
+            You have no rejected posts at the moment.
+        </div>
+    {% endif %}
+</div>
+
+<style>
+/* Styling for Rejected Posts Page */
+.container {
+    max-width: 900px;
+    margin: auto;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #343a40;
+}
+
+.list-group-item {
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    transition: box-shadow 0.2s;
+    padding: 20px;
+    position: relative;
+}
+
+.list-group-item:hover {
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.post-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.post-feedback, .post-location {
+    font-size: 1rem;
+    color: #495057;
+}
+
+.text-muted {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+/* Button Wrapper */
+.edit-button-wrapper {
+    margin-top: 20px; /* Space between the content and the button */
+    padding: 10px 0;  /* Padding inside the button container */
+}
+
+/* Full-width Button with Padding */
+.btn-block {
+    width: 100%;
+    padding: 15px; /* Adds top/bottom padding for the button */
+    font-size: 1rem;
+    border-radius: 6px;
+}
+
+/* Nigerian Flag-inspired Button */
+.btn-nigeria {
+    background-color: #008751; /* Green color */
+    border: none;
+    transition: background-color 0.2s ease-in-out;
+    color: #fff;
+}
+
+.btn-nigeria:hover {
+    background-color: #004d2c; /* Darker Green */
+}
+
+/* Alert Styling */
+.alert {
+    margin-top: 20px;
+    font-size: 1.1rem;
+    background-color: #ffffff;
+    color: #008751; /* Green text */
+    border: 1px solid #008751; /* Green border */
+}
+
+.alert-info {
+    background-color: #ffffff;
+    color: #008751;
+    border: 1px solid #008751;
+}
+
+</style>
+{% endblock %}

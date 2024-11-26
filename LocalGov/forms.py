@@ -121,6 +121,25 @@ class StaffPostForm(forms.ModelForm):
         }
 
 
+class StaffPostEditForm(forms.ModelForm):
+    class Meta:
+        model = StaffPost
+        fields = ['title', 'description', 'image', 'video', 'state', 'local_government', 'chairman', 'location', 'latitude', 'longitude', 'status', 'feedback']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 6, 'cols': 40}),
+            'image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'video': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'state': forms.TextInput(attrs={'class': 'form-control'}),
+            'local_government': forms.TextInput(attrs={'class': 'form-control'}),
+            'chairman': forms.TextInput(attrs={'class': 'form-control'}),
+            'location': forms.TextInput(attrs={'class': 'form-control'}),
+            'latitude': forms.HiddenInput(attrs={'class': 'form-control'}),
+            'longitude': forms.HiddenInput(attrs={'class': 'form-control'}),
+            'status': forms.Select(attrs={'class': 'form-control'}),
+            'feedback': forms.Textarea(attrs={'class': 'form-control'}),
+        }
+
 
 class PostForm(forms.ModelForm):
     class Meta:
@@ -157,5 +176,16 @@ class CommentForm(forms.ModelForm):
 class ReplyForm(forms.ModelForm):
     class Meta:
         model = Reply
+        fields = ['text']
+
+class StaffPostCommentForm(forms.ModelForm):
+    class Meta:
+        model = StaffPostComment
+        fields = ['text']
+        
+
+class StaffPostReplyForm(forms.ModelForm):
+    class Meta:
+        model = StaffPostReply
         fields = ['text']
         

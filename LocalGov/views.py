@@ -17,6 +17,9 @@ from django.http import Http404
 from . models import *
 from .forms import *
 
+import logging
+logger = logging.getLogger(__name__)
+
 # Create your views here.
 
 def signup_view(request):
@@ -439,6 +442,25 @@ def reinstate_staff(request, staff_id):
     return redirect('view_staff_requests')
 
 
+@login_required
+def reject_staff_post(request, post_id):
+    if request.method == 'POST':
+        feedback = request.POST.get('feedback')
+
+        # Fetch the post or return a 404 error if not found
+        post = get_object_or_404(StaffPost, id=post_id)
+        
+        # Process rejection logic
+        post.status = 'rejected'  
+        post.feedback = feedback  
+        post.save()
+
+        
+        return redirect('chairman_pending_posts')
+    return redirect('chairman_pending_posts')
+
+
+
 def get_local_governments(request, state_id):
     local_governments = LocalGovernment.objects.filter(state_id=state_id)
     data = {
@@ -684,22 +706,44 @@ def create_staff_post(request):
 
 
 @login_required
-def reject_staff_post(request, post_id):
+def rejected_posts_list(request):
+    rejected_posts = StaffPost.objects.filter(author=request.user, status='rejected')
+    rejected_count = rejected_posts.count()
+
+    # Render the HTML for the list of rejected posts
+    rejected_posts_html = render_to_string('staff/rejected_posts_list.html', {'rejected_posts': rejected_posts})
+
+    # Return JSON with the count and HTML for dynamic update
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'rejected_count': rejected_count,
+            'rejected_posts_html': rejected_posts_html
+        })
+
+    # For non-AJAX requests, render the full page
+    return render(request, 'staff/rejected_posts_list.html', {
+        'rejected_posts': rejected_posts,
+        'rejected_count': rejected_count,
+    })
+
+
+@login_required
+def edit_post(request, post_id):
+    post = get_object_or_404(StaffPost, id=post_id, author=request.user)
+
     if request.method == 'POST':
-        feedback = request.POST.get('feedback')
-
-        # Fetch the post or return a 404 error if not found
-        post = get_object_or_404(StaffPost, id=post_id)
-        
-        # Process rejection logic
-        post.status = 'rejected'  
-        post.feedback = feedback  
-        post.save()
-
-        
-        return redirect('chairman_pending_posts')
-    return redirect('chairman_pending_posts')
-
+        form = StaffPostEditForm(request.POST, request.FILES, instance=post)
+        if form.is_valid():
+            post.status = 'pending' 
+            post.save()  
+            form.save()  
+            messages.success(request, 'Your post has been updated and is now pending approval.')
+            return redirect('rejected_posts_list')
+        else:
+            print(form.errors)  
+    else:
+        form = StaffPostEditForm(instance=post)
+    return render(request, 'staff/edit_post.html', {'form': form, 'post': post})
 
 
 @login_required
@@ -789,7 +833,6 @@ def add_reply(request, comment_id, parent_reply_id=None):
             })
 
     return JsonResponse({'status': 'error', 'message': 'Failed to post reply.'})
-
 
 @login_required
 def like_comment(request, comment_id):
@@ -906,9 +949,155 @@ def delete_reply(request, reply_id):
     return JsonResponse({'status': 'failure', 'message': 'You can only delete your own reply.'})
 
 
+@login_required
 def load_comments(request, post_id):
     post = Post.objects.get(id=post_id)
     comments = post.comments.all().order_by('-date_commented')
     context = {'comments': comments}
     comments_html = render_to_string('comments_list.html', context)
+    return JsonResponse({'status': 'success', 'comments_html': comments_html})
+
+
+
+# View for displaying staff post detail
+@login_required
+def staff_post_detail(request, staffpost_id):
+    staff_post = get_object_or_404(StaffPost, id=staffpost_id)
+    # Redirecting to home with the staffpost_id as a query parameter
+    return redirect(f"{reverse('home')}?staffpost_id={staff_post.id}")
+
+# View for adding a comment to a staff post
+@login_required
+def add_staff_comment(request, staffpost_id):
+    staff_post = get_object_or_404(StaffPost, id=staffpost_id)
+    if request.method == 'POST':
+        comment_text = request.POST.get('comment_text', '').strip()
+        if not comment_text:
+            return JsonResponse({'success': False, 'message': 'Comment cannot be empty.'})
+
+        # Save the comment
+        comment = StaffPostComment.objects.create(
+            staff_post=staff_post,
+            user=request.user,
+            text=comment_text
+        )
+
+        # Return data to render the new comment
+        return JsonResponse({
+            'success': True,
+            'comment_id': comment.id,
+            'username': comment.user.username,
+            'text': comment.text,
+            'date': comment.date_commented.strftime("%b %d, %Y"),
+            'message': 'You commented on this post.'
+        })
+    return JsonResponse({'success': False, 'message': 'Invalid request method.'})
+
+
+
+# View for adding a reply to a comment
+@login_required
+def add_staff_reply(request, staffcomment_id, parent_reply_id=None):
+    comment = get_object_or_404(StaffPostComment, id=staffcomment_id)
+    parent_reply = None
+    if parent_reply_id:
+        parent_reply = get_object_or_404(StaffPostReply, id=parent_reply_id)
+
+    if request.method == "POST":
+        text = request.POST.get('text')
+        if text:
+            # Create the reply object and save it
+            reply = StaffPostReply.objects.create(
+                comment=comment,
+                parent=parent_reply,
+                user=request.user,
+                text=text
+            )
+            
+            # Return a JSON response with the newly created reply data
+            return JsonResponse({
+                'status': 'success',
+                'reply_id': reply.id,
+                'username': reply.user.username,
+                'text': reply.text,
+                'date': reply.date_commented.strftime("%b %d, %Y"),
+                'parent_reply_id': parent_reply.id if parent_reply else None,
+            })
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Reply text cannot be empty.'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
+
+# View for liking a comment
+@login_required
+def staff_like_comment(request, staffcomment_id):
+    comment = get_object_or_404(StaffPostComment, id=staffcomment_id)
+    user = request.user
+    if user not in comment.like_count.all():
+        comment.like_count.add(user)
+    else:
+        comment.like_count.remove(user)
+    return redirect('staff_post_detail', staffpost_id=comment.staff_post.id)
+
+# View for disliking a comment
+@login_required
+def staff_dislike_comment(request, staffcomment_id):
+    comment = get_object_or_404(StaffPostComment, id=staffcomment_id)
+    user = request.user
+    if user not in comment.dislike_count.all():
+        comment.dislike_count.add(user)
+    else:
+        comment.dislike_count.remove(user)
+    return redirect('staff_post_detail', staffpost_id=comment.staff_post.id)
+
+# View for liking a reply
+@login_required
+def staff_like_reply(request, staffreply_id):
+    reply = get_object_or_404(StaffPostReply, id=staffreply_id)
+    user = request.user
+    if user not in reply.like_count.all():
+        reply.like_count.add(user)
+    else:
+        reply.like_count.remove(user)
+    return redirect('staff_post_detail', staffpost_id=reply.comment.staff_post.id)
+
+# View for disliking a reply
+@login_required
+def staff_dislike_reply(request, staffreply_id):
+    reply = get_object_or_404(StaffPostReply, id=staffreply_id)
+    user = request.user
+    if user not in reply.dislike_count.all():
+        reply.dislike_count.add(user)
+    else:
+        reply.dislike_count.remove(user)
+    return redirect('staff_post_detail', staffpost_id=reply.comment.staff_post.id)
+
+# View for deleting a comment
+@login_required
+def staff_delete_comment(request, staffcomment_id):
+    comment = get_object_or_404(StaffPostComment, id=staffcomment_id)
+    if comment.user == request.user or request.user.is_staff:
+        comment.delete()
+    return redirect('staff_post_detail', staffpost_id=comment.staff_post.id)
+
+# View for deleting a reply
+@login_required
+def staff_delete_reply(request, staffreply_id):
+    reply = get_object_or_404(StaffPostReply, id=staffreply_id)
+    if reply.user == request.user or request.user.is_staff:
+        reply.delete()
+    return redirect('staff_post_detail', staffpost_id=reply.comment.staff_post.id)
+
+
+# AJAX view for loading staff comments dynamically
+@login_required
+def load_staff_comments(request, staffpost_id):
+    try:
+        staff_post = StaffPost.objects.get(id=staffpost_id)
+    except StaffPost.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Post not found'}, status=404)
+
+    comments = staff_post.staff_comments.all().order_by('-date_commented')
+    context = {'comments': comments}
+    comments_html = render_to_string('comments_list.html', context)
+
     return JsonResponse({'status': 'success', 'comments_html': comments_html})

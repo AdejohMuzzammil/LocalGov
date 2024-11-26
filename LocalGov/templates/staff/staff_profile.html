@@ -151,6 +151,18 @@
         margin-bottom: 30px;
     }
 
+    /* Badge for Reject Button */
+    .badge {
+        background-color: #d9534f;
+        color: white;
+        border-radius: 50%;
+        padding: 5px 10px;
+        font-size: 14px;
+        position: absolute;
+        top: -5px;
+        right: -5px;
+    }
+
     /* Media Queries for responsiveness */
     @media (max-width: 768px) {
         .profile-container {
@@ -190,18 +202,12 @@
         {% elif staff.status == 'declined' %} declined-status-btn 
         {% elif staff.status == 'removed' %} removed-status-btn 
         {% endif %}">
-        {% if staff.status == 'approved' %}
-            Approved
-        {% elif staff.status == 'pending' %}
-            Pending
-        {% elif staff.status == 'declined' %}
-            Declined
-        {% elif staff.status == 'removed' %}
-            Removed
+        {% if staff.status == 'approved' %} Approved
+        {% elif staff.status == 'pending' %} Pending
+        {% elif staff.status == 'declined' %} Declined
+        {% elif staff.status == 'removed' %} Removed
         {% endif %}
         </div>
-
-
     </div>
 
     <!-- Profile Information -->
@@ -216,6 +222,37 @@
     <div class="profile-actions">
         <a href="{% url 'edit_staff_profile' %}" class="btn">Edit Profile</a>
         <a href="{% url 'create_staff_post' %}" class="btn">Create Post</a>
+        <!-- Reject Button with Counter -->
+        <a href="{% url 'rejected_posts_list' %}" class="btn">
+            Rejected Posts
+            <span class="badge" id="rejected-count">{{ rejected_count }}</span>
+        </a>
     </div>
 </div>
+
+<script>
+    // Function to fetch rejected posts count using AJAX
+    function fetchRejectedPostsCount() {
+        fetch("{% url 'rejected_posts_list' %}", {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('rejected-count').textContent = data.rejected_count;
+            document.getElementById('rejected-posts-list').innerHTML = data.rejected_posts_html;
+        })
+        .catch(error => {
+            console.error('Error fetching rejected posts count:', error);
+        });
+    }
+
+    window.onload = function() {
+        fetchRejectedPostsCount();  
+        setInterval(fetchRejectedPostsCount, 3000);  
+    }
+</script>
+
 {% endblock %}

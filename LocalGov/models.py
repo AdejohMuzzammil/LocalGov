@@ -1,4 +1,6 @@
 from django.contrib.auth.models import AbstractUser
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.db import models
 
 # Create your models here.
@@ -112,8 +114,7 @@ class StaffPost(models.Model):
     def __str__(self):
         return self.title
    
-   
-    
+     
 class Post(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
@@ -142,7 +143,6 @@ class Comment(models.Model):
     def __str__(self):
         return f'Comment by {self.user.username} on {self.post.title}'
 
-
 class Reply(models.Model):
     comment = models.ForeignKey(Comment, related_name='replies', on_delete=models.CASCADE, null=True, blank=True)
     parent = models.ForeignKey('self', related_name='child_replies', on_delete=models.CASCADE, null=True, blank=True)
@@ -153,8 +153,31 @@ class Reply(models.Model):
     dislike_count = models.ManyToManyField(User, related_name='disliked_replies', blank=True)
 
     def __str__(self):
-        return f'Reply by {self.user.username} on {self.comment.text}'
+        return f'Reply by {self.user.username} on {self.comment.text}'    
 
+
+class StaffPostComment(models.Model):
+    staff_post = models.ForeignKey(StaffPost, related_name='staff_comments', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    text = models.TextField()
+    date_commented = models.DateTimeField(auto_now_add=True)
+    like_count = models.ManyToManyField(User, related_name='liked_staff_comments', blank=True)
+    dislike_count = models.ManyToManyField(User, related_name='disliked_staff_comments', blank=True)
+
+    def __str__(self):
+        return f'Comment by {self.user.username} on {self.staff_post.title}'
+
+class StaffPostReply(models.Model):
+    comment = models.ForeignKey(StaffPostComment, related_name='staff_replies', on_delete=models.CASCADE, null=True, blank=True)
+    parent = models.ForeignKey('self', related_name='child_replies', on_delete=models.CASCADE, null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    text = models.TextField()
+    date_commented = models.DateTimeField(auto_now_add=True)
+    like_count = models.ManyToManyField(User, related_name='liked_staff_replies', blank=True)
+    dislike_count = models.ManyToManyField(User, related_name='disliked_staff_replies', blank=True)
+
+    def __str__(self):
+        return f'Reply by {self.user.username} on {self.comment.text}'
 
 class SubscriptionPlan(models.Model):
     name = models.CharField(max_length=50, default="Default Plan")
