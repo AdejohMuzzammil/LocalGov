@@ -55,89 +55,114 @@
             {% endif %}
         </div>
 
-        <!-- Comments Section -->
-        <div class="card-footer">
-            <button class="btn btn-sm btn-primary" onclick="toggleComments({{ post.id }})">
-                <i class="fas fa-comment"></i> Comments
-            </button>
+      <!-- Comments Section -->
+    <div class="card-footer">
+        <button class="btn btn-sm btn-primary" onclick="toggleComments({{ post.id }})">
+            <i class="fas fa-comment"></i> Comments
+        </button>
 
-            <div id="comments-{{ post.id }}" class="comments-section mt-3" style="display: none;">
-                <h6>Comments</h6>
+        <div id="comments-{{ post.id }}" class="comments-section mt-3" style="display: none;">
+            <h6>Comments</h6>
 
-                {% if user.is_authenticated %}
-                    <div id="comments-container-{{ post.id }}">
-                        {% for comment in post.comments.all %}
-                            <div class="comment" id="comment-{{ comment.id }}" style="padding-bottom: 10px; margin-bottom: 15px;">
-                                <strong>{{ comment.user.username }}</strong>: {{ comment.text }}
-                                <span class="text-muted" style="font-size: 0.9em;">{{ comment.date_commented|date:"F j, Y" }}</span>
+            {% if user.is_authenticated %}
+                <div id="comments-container-{{ post.id }}">
+                    {% for comment in post.comments.all %}
+                        <div class="comment" id="comment-{{ comment.id }}" style="padding-bottom: 10px; margin-bottom: 15px;">
+                            <strong>{{ comment.user.username }}</strong>: {{ comment.text }}
+                            <span class="text-muted" style="font-size: 0.9em;">{{ comment.date_commented|date:"F j, Y" }}</span>
 
-                                <div style="margin-top: 10px;">
-                                    <button onclick="likeComment({{ comment.id }})" style="background-color: #28a745; color: white; border: none; padding: 5px 10px; font-size: 0.85em; border-radius: 3px; margin-right: 5px;">
-                                        <i class="fas fa-thumbs-up"></i> <span class="comment-like-count">{{ comment.like_count.count }}</span>
+                            <div style="margin-top: 10px;">
+                                <button onclick="likeComment({{ comment.id }})" style="background-color: #28a745; color: white; border: none; padding: 5px 10px; font-size: 0.85em; border-radius: 3px; margin-right: 5px;">
+                                    <i class="fas fa-thumbs-up"></i> <span class="comment-like-count">{{ comment.like_count.count }}</span>
+                                </button>
+
+                                <button onclick="dislikeComment({{ comment.id }})" style="background-color: #dc3545; color: white; border: none; padding: 5px 10px; font-size: 0.85em; border-radius: 3px; margin-right: 5px;">
+                                    <i class="fas fa-thumbs-down"></i> <span class="comment-dislike-count">{{ comment.dislike_count.count }}</span>
+                                </button>
+
+                                {% if comment.user == user %}
+                                    <button onclick="deleteComment({{ comment.id }})" style="background-color: #ffc107; color: black; border: none; padding: 5px 10px; font-size: 0.85em; border-radius: 3px; margin-right: 5px;">
+                                        <i class="fas fa-trash"></i> Delete
                                     </button>
+                                {% endif %}
 
-                                    <button onclick="dislikeComment({{ comment.id }})" style="background-color: #dc3545; color: white; border: none; padding: 5px 10px; font-size: 0.85em; border-radius: 3px; margin-right: 5px;">
-                                        <i class="fas fa-thumbs-down"></i> <span class="comment-dislike-count">{{ comment.dislike_count.count }}</span>
-                                    </button>
-
-                                    {% if comment.user == user %}
-                                        <button onclick="deleteComment({{ comment.id }})" style="background-color: #ffc107; color: black; border: none; padding: 5px 10px; font-size: 0.85em; border-radius: 3px; margin-right: 5px;">
-                                            <i class="fas fa-trash"></i> Delete
-                                        </button>
-                                    {% endif %}
-
-                                    <button onclick="toggleReplyForm({{ comment.id }})" style="background-color: #6c757d; color: white; border: none; padding: 5px 10px; font-size: 0.85em; border-radius: 3px;">
-                                        <i class="fas fa-reply"></i> Reply
-                                    </button>
-                                </div>
-
-                                <!-- Reply Form (Initially hidden) -->
-                                <div id="reply-form-{{ comment.id }}" style="display: none; margin-top: 10px;">
-                                    <textarea id="reply-text-{{ comment.id }}" style="width: 100%; padding: 5px; font-size: 0.85em;" placeholder="Write a reply..."></textarea>
-                                    <button onclick="addReply({{ comment.id }})" style="background-color: #007bff; color: white; border: none; padding: 5px 10px; font-size: 0.85em; border-radius: 3px; margin-top: 5px;">Reply</button>
-                                </div>
-
-                                <!-- Replies Section -->
-                                <div class="replies" style="margin-top: 10px;">
-                                    {% for reply in comment.replies.all %}
-                                        <div class="reply" id="reply-{{ reply.id }}" style="margin-bottom: 10px;">
-                                            <strong>{{ reply.user.username }}</strong>: {{ reply.text }}
-                                            <span class="text-muted" style="font-size: 0.85em;">{{ reply.date_commented|date:"F j, Y" }}</span>
-
-                                            <div style="margin-top: 5px;">
-                                                <button onclick="likeReply({{ reply.id }})" style="background-color: #28a745; color: white; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px; margin-right: 5px;">
-                                                    <i class="fas fa-thumbs-up"></i> <span class="reply-like-count">{{ reply.like_count.count }}</span>
-                                                </button>
-
-                                                <button onclick="dislikeReply({{ reply.id }})" style="background-color: #dc3545; color: white; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px; margin-right: 5px;">
-                                                    <i class="fas fa-thumbs-down"></i> <span class="reply-dislike-count">{{ reply.dislike_count.count }}</span>
-                                                </button>
-
-                                                {% if reply.user == user %}
-                                                    <button onclick="deleteReply({{ reply.id }})" style="background-color: #ffc107; color: black; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px;">
-                                                        <i class="fas fa-trash"></i> Delete
-                                                    </button>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-
-                                <hr style="border: 1px solid #ddd; margin-top: 15px;">
+                                <button onclick="toggleReplyForm({{ comment.id }})" style="background-color: #6c757d; color: white; border: none; padding: 5px 10px; font-size: 0.85em; border-radius: 3px;">
+                                    <i class="fas fa-reply"></i> Reply
+                                </button>
                             </div>
-                        {% endfor %}
-                    </div>
 
-                    <!-- Comment Input -->
-                    <textarea id="comment-text-{{ post.id }}" style="width: 100%; padding: 5px; font-size: 0.9em; margin-top: 10px;" placeholder="Write a comment..."></textarea>
-                    <button onclick="addComment({{ post.id }})" style="background-color: #007bff; color: white; border: none; padding: 5px 10px; font-size: 0.85em; border-radius: 3px; margin-top: 5px;">
-                        <i class="fas fa-comment"></i> Comment
+                            <!-- Reply Form (Initially hidden) -->
+                            <div id="reply-form-{{ comment.id }}" style="display: none; margin-top: 10px;">
+                                <div class="input-group" style="border-radius: 20px; overflow: hidden; display: flex; align-items: center;">
+                                    <!-- Textarea with enhanced styling to align with the button -->
+                                    <textarea 
+                                        id="reply-text-{{ comment.id }}" 
+                                        class="form-control" 
+                                        placeholder="Write a reply..." 
+                                        style="border-radius: 25px; font-size: 1em; padding: 10px 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border: 1px solid #ddd; height: 50px; resize: none; flex-grow: 1;">
+                                    </textarea>
+                                    
+                                    <button 
+                                        onclick="addReply({{ comment.id }})" 
+                                        class="btn btn-primary" 
+                                        style="display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 1.2em; width: 50px; height: 50px; padding: 0; background-color: #fcdc56; border: none; margin-left: 10px; outline: none;">
+                                        <i class="fas fa-paper-plane" style="color: white;"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+
+                            <!-- Replies Section -->
+                            <div class="replies" style="margin-top: 10px;">
+                                {% for reply in comment.replies.all %}
+                                    <div class="reply" id="reply-{{ reply.id }}" style="margin-bottom: 10px;">
+                                        <strong>{{ reply.user.username }}</strong>: {{ reply.text }}
+                                        <span class="text-muted" style="font-size: 0.85em;">{{ reply.date_commented|date:"F j, Y" }}</span>
+
+                                        <div style="margin-top: 5px;">
+                                            <button onclick="likeReply({{ reply.id }})" style="background-color: #28a745; color: white; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px; margin-right: 5px;">
+                                                <i class="fas fa-thumbs-up"></i> <span class="reply-like-count">{{ reply.like_count.count }}</span>
+                                            </button>
+
+                                            <button onclick="dislikeReply({{ reply.id }})" style="background-color: #dc3545; color: white; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px; margin-right: 5px;">
+                                                <i class="fas fa-thumbs-down"></i> <span class="reply-dislike-count">{{ reply.dislike_count.count }}</span>
+                                            </button>
+
+                                            {% if reply.user == user %}
+                                                <button onclick="deleteReply({{ reply.id }})" style="background-color: #ffc107; color: black; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px;">
+                                                    <i class="fas fa-trash"></i> Delete
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            <hr style="border: 1px solid #ddd; margin-top: 15px;">
+                        </div>
+                    {% endfor %}
+                </div>
+
+            <!-- Comment Input -->
+                <div class="input-group" style="margin-top: 10px; display: flex; align-items: center; border-radius: 20px; overflow: hidden;">
+                    <!-- Textarea with increased border-radius and improved styling -->
+                    <textarea id="comment-text-{{ post.id }}" class="form-control" 
+                            style="border-radius: 25px; font-size: 1em; padding: 12px; min-height: 40px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border: 1px solid #ddd; resize: none; flex-grow: 1;"
+                            placeholder="Write a comment..." oninput="resizeTextarea(this)"></textarea>
+                    
+                    <!-- Comment Button with paper-plane icon, green background, and white icon -->
+                    <button id="comment-button-{{ post.id }}" onclick="addComment({{ post.id }})" class="btn btn-primary" 
+                            style="border-radius: 50%; font-size: 1.2em; padding: 10px; background-color: transparent; border: none; transition: transform 0.2s, box-shadow 0.2s;"
+                            onfocus="this.style.backgroundColor='#6c757d';" onblur="this.style.backgroundColor='transparent';">
+                        <i class="fas fa-paper-plane" style="color: white; background-color: #28a745; border-radius: 50%; padding: 12px;"></i>
                     </button>
-                {% else %}
-                    <p>You must <a href="{% url 'login' %}">log in</a> to comment.</p>
-                {% endif %}
-            </div>
+                </div>
+
+            {% else %}
+                <p>You must <a href="{% url 'login' %}">log in</a> to comment.</p>
+            {% endif %}
         </div>
+    </div>
 
     </div>
     {% endfor %}
@@ -190,6 +215,7 @@
 
         </div>
 
+        
         <!-- Comments Section -->
         <div class="card-footer">
             <button class="btn btn-sm btn-primary" onclick="toggleStaffComments({{ post.id }})">
@@ -221,20 +247,25 @@
                                         </button>
                                     {% endif %}
 
-                                    <button onclick="toggleStaffReplyForm({{ comment.id }})" style="background-color: #6c757d; color: white; border: none; padding: 5px 10px; font-size: 0.85em; border-radius: 3px;">
-                                        <i class="fas fa-reply"></i> Reply
+                                    <button onclick="toggleStaffReplyForm({{ comment.id }})" style="background-color: #fcdc56; border: none; padding: 10px; font-size: 0.85em; border-radius: 50%; margin-right: 5px;">
+                                        <i class="fas fa-paper-plane" style="color: white;"></i> Reply
                                     </button>
                                 </div>
 
                                 <!-- Reply Form (Initially hidden) -->
                                 <div id="reply-form-{{ comment.id }}" style="display: none; margin-top: 10px;">
-                                    <textarea id="reply-text-{{ comment.id }}" style="width: 100%; padding: 5px; font-size: 0.85em;" placeholder="Write a reply..."></textarea>
-                                    <button onclick="addStaffReply({{ comment.id }})" style="background-color: #007bff; color: white; border: none; padding: 5px 10px; font-size: 0.85em; border-radius: 3px; margin-top: 5px;">Reply</button>
+                                    <!-- Comment textarea and reply button on the same line -->
+                                    <div style="display: flex; align-items: center;">
+                                        <textarea id="reply-text-{{ comment.id }}" style="width: 80%; padding: 8px; font-size: 0.85em; border-radius: 25px; margin-right: 10px; border: 1px solid #ccc;" placeholder="Write a reply..."></textarea>
+                                        <button onclick="addStaffReply({{ comment.id }})" style="background-color: #fcdc56; color: white; border: none; padding: 12px; font-size: 0.85em; border-radius: 50%;">
+                                            <i class="fas fa-paper-plane" style="color: white;"></i>
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <!-- Replies Section -->
-                                <div class="replies" style="margin-top: 10px;">
-                                    {% for reply in comment.replies.all %}
+                                <div id="replies-{{ comment.id }}" class="replies" style="margin-top: 10px;">
+                                    {% for reply in comment.staff_replies.all %}
                                         <div class="reply" id="reply-{{ reply.id }}" style="margin-bottom: 10px;">
                                             <strong>{{ reply.user.username }}</strong>: {{ reply.text }}
                                             <span class="text-muted" style="font-size: 0.85em;">{{ reply.date_commented|date:"F j, Y" }}</span>
@@ -264,15 +295,19 @@
                     </div>
 
                     <!-- Comment Input -->
-                    <textarea id="comment-text-{{ post.id }}" style="width: 100%; padding: 5px; font-size: 0.9em; margin-top: 10px;" placeholder="Write a comment..."></textarea>
-                    <button onclick="addStaffComment({{ post.id }})" style="background-color: #007bff; color: white; border: none; padding: 5px 10px; font-size: 0.85em; border-radius: 3px; margin-top: 5px;">
-                        <i class="fas fa-comment"></i> Comment
-                    </button>
+                    <div style="display: flex; align-items: center;">
+                        <textarea id="comment-text-{{ post.id }}" style="width: 80%; padding: 8px; font-size: 0.9em; margin-top: 10px; border-radius: 25px; margin-right: 10px; border: 1px solid #ccc;" placeholder="Write a comment..."></textarea>
+                        <button onclick="addStaffComment({{ post.id }})" style="background-color: #28a745; color: white; border: none; padding: 12px; font-size: 0.85em; border-radius: 50%;">
+                            <i class="fas fa-paper-plane" style="color: white;"></i>
+                        </button>
+                    </div>
                 {% else %}
-                    <p>You must <a href="{% url 'login' %}">log in</a> to comment.</p>
+                    <p><a href="{% url 'login' %}">Log in</a> to post a comment or reply.</p>
                 {% endif %}
             </div>
         </div>
+
+
 
 
     </div>
@@ -282,6 +317,21 @@
 
 
 <script>
+
+    // Function to resize the textarea as the user types (expands upwards)
+    function resizeTextarea(textarea) {
+        textarea.style.height = 'auto';  
+        textarea.style.height = (textarea.scrollHeight) + 'px';  
+    }
+
+    // Reinitialize Reply Button and Form Toggling
+    function reinitializeReplyForms() {
+        $(document).off('click', '.reply-button').on('click', '.reply-button', function() {
+            const commentId = $(this).data('comment-id');
+            $(`#reply-form-${commentId}`).toggle(); 
+        });
+    }
+
     // Function to toggle the visibility of the comments section
     function toggleComments(postId) {
         const commentsSection = document.getElementById(`comments-${postId}`);
@@ -296,10 +346,23 @@
         replyForm.style.display = replyForm.style.display === 'none' ? 'block' : 'none';
     }
     
-    // Add Comment
+    // Add Comment Function 
     function addComment(postId) {
-        const commentText = document.getElementById(`comment-text-${postId}`).value;
-    
+        const commentText = document.getElementById(`comment-text-${postId}`).value.trim();
+        const button = document.getElementById(`comment-button-${postId}`);
+
+        // If the comment text is empty, do not proceed
+        if (!commentText) {
+            alert("Comment cannot be empty!");
+            return;
+        }
+
+        // Simulate button press effect with smooth transition
+        button.style.transform = 'scale(0.95)';
+        button.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.2)';
+        button.style.transition = 'transform 0.1s ease, box-shadow 0.1s ease';
+
+        // Perform AJAX POST request
         $.ajax({
             type: 'POST',
             url: `/post/${postId}/add_comment/`,
@@ -309,40 +372,63 @@
             },
             success: function(response) {
                 if (response.status === 'success') {
-                    const newComment = `<div class="comment" id="comment-${response.comment_id}">
-                        <strong>${response.username}</strong>: ${response.text}
-                        <span class="text-muted">${response.date}</span>
-    
-                        <button onclick="likeComment(${response.comment_id})" style="display: inline-flex; align-items: center; padding: 6px 12px; font-size: 14px; background-color: #28a745; color: white; border-radius: 4px; border: none; cursor: pointer; margin: 5px; transition: background-color 0.3s ease;">
-                            <i class="fas fa-thumbs-up" style="margin-right: 5px;"></i> 
-                        </button>
+                    // Create the new comment element
+                    const newComment = `
+                        <div class="comment" id="comment-${response.comment_id}" style="display: none;">
+                            <strong>${response.username}</strong>: ${response.text}
+                            <span class="text-muted">${response.date}</span>
+                            
+                            <!-- Like Button -->
+                            <button onclick="likeComment(${response.comment_id})" style="display: inline-flex; align-items: center; padding: 6px 12px; font-size: 14px; background-color: #28a745; color: white; border-radius: 4px; border: none; cursor: pointer; margin: 5px; transition: background-color 0.3s ease;">
+                                <i class="fas fa-thumbs-up" style="margin-right: 5px;"></i>
+                            </button>
 
-                        <button onclick="dislikeComment(${response.comment_id})" style="display: inline-flex; align-items: center; padding: 6px 12px; font-size: 14px; background-color: #dc3545; color: white; border-radius: 4px; border: none; cursor: pointer; margin: 5px; transition: background-color 0.3s ease;">
-                            <i class="fas fa-thumbs-down" style="margin-right: 5px;"></i> 
-                        </button>
+                            <!-- Dislike Button -->
+                            <button onclick="dislikeComment(${response.comment_id})" style="display: inline-flex; align-items: center; padding: 6px 12px; font-size: 14px; background-color: #dc3545; color: white; border-radius: 4px; border: none; cursor: pointer; margin: 5px; transition: background-color 0.3s ease;">
+                                <i class="fas fa-thumbs-down" style="margin-right: 5px;"></i>
+                            </button>
 
-                        <button onclick="deleteComment(${response.comment_id})" style="display: inline-flex; align-items: center; padding: 6px 12px; font-size: 14px; background-color: #ffc107; color: black; border-radius: 4px; border: none; cursor: pointer; margin: 5px; transition: background-color 0.3s ease;">
-                            <i class="fas fa-trash" style="margin-right: 5px;"></i> Delete
-                        </button>
+                            <!-- Delete Button -->
+                            <button onclick="deleteComment(${response.comment_id})" style="display: inline-flex; align-items: center; padding: 6px 12px; font-size: 14px; background-color: #ffc107; color: black; border-radius: 4px; border: none; cursor: pointer; margin: 5px; transition: background-color 0.3s ease;">
+                                <i class="fas fa-trash" style="margin-right: 5px;"></i> Delete
+                            </button>
 
-                        <button onclick="toggleReplyForm(${response.comment_id})" class="btn btn-secondary btn-sm">
-                            <i class="fas fa-reply"></i> Reply
-                        </button>
+                                <!-- Reply Button -->
+                            <button class="reply-button btn btn-secondary btn-sm" onclick="toggleReplyForm(${response.comment_id})">
+                                <i class="fas fa-reply"></i> Reply
+                            </button>
 
-                        <!-- Comment Reply Form (Initially hidden) -->
-                        <div id="reply-form-${response.comment_id}" style="display: none;">
-                            <textarea id="reply-text-${response.comment_id}" class="form-control" placeholder="Write a reply..."></textarea>
-                            <button onclick="addReply(${response.comment_id})" class="btn btn-primary btn-sm">Reply</button>
-                        </div>
-                        
-                    </div>`;
+                            <!-- Reply Form -->
+                            <div id="reply-form-${response.comment_id}" style="display: none; margin-top: 10px;">
+                                <div class="input-group" style="border-radius: 20px; overflow: hidden;">
+                                    <textarea id="reply-text-${response.comment_id}" class="form-control" placeholder="Write a reply..." style="border-radius: 25px; font-size: 1em; padding: 12px; min-height: 40px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border: 1px solid #ddd;"></textarea>
+                                    <button onclick="addReply(${response.comment_id})" class="btn btn-primary" style="border-radius: 50%; font-size: 1.2em; padding: 12px; background-color: transparent; border: none;">
+                                        <i class="fas fa-paper-plane" style="color: white; background-color: #fcdc56; border-radius: 50%; padding: 12px;"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>`;
+
+                    // Append the new comment and animate its appearance
                     $(`#comments-container-${postId}`).prepend(newComment);
+                    $(`#comment-${response.comment_id}`).fadeIn("slow");
+
+                    // Clear the input field and reset the button appearance
                     document.getElementById(`comment-text-${postId}`).value = '';
+                    button.style.transform = 'scale(1)';
+                    button.style.boxShadow = 'none';
+                } else {
+                    alert("Failed to add comment. Please try again.");
                 }
+            },
+            error: function() {
+                alert("An error occurred while adding the comment.");
+                // Reset the button appearance in case of error
+                button.style.transform = 'scale(1)';
+                button.style.boxShadow = 'none';
             }
         });
     }
-
 
     function addReply(commentId) {
         // Get the reply text from the textarea
@@ -360,7 +446,7 @@
                 if (response.status === 'success') {
                     // Create the new reply element to display on the page
                     const newReply = `
-                        <div class="reply" id="reply-${response.reply_id}">
+                        <div class="reply" id="reply-${response.reply_id}" style="display: none;">
                             <strong>${response.username}</strong>: ${response.text}
                             <span class="text-muted">${response.date}</span>
     
@@ -379,6 +465,9 @@
     
                     // Append the new reply under the respective comment's reply section
                     $(`#reply-form-${commentId}`).before(newReply);
+    
+                    // Fade in the new reply
+                    $(`#reply-${response.reply_id}`).fadeIn();
     
                     // Clear the reply textarea
                     document.getElementById(`reply-text-${commentId}`).value = '';
@@ -432,7 +521,6 @@
         });
     }
         
-
     function deleteComment(commentId) {
         $.ajax({
             type: 'POST',
@@ -440,14 +528,18 @@
             data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
             success: function(response) {
                 if (response.status === 'success') {
-                    $(`#comment-${commentId}`).remove();
+                    // Fade out the comment slowly before removing it from the DOM
+                    $(`#comment-${commentId}`).fadeOut("slow", function() {
+                        // Once the fadeOut is complete, remove the comment from the DOM
+                        $(this).remove();
+                    });
                 } else {
                     alert(response.message);
                 }
             }
         });
     }
-
+    
  // Like and Dislike Reply Functions
     function likeReply(replyId) {
         $.ajax({
@@ -500,14 +592,16 @@
             data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
             success: function(response) {
                 if (response.status === 'success') {
-                    $(`#reply-${replyId}`).remove();
+                    $(`#reply-${replyId}`).fadeOut("slow", function() {
+                        $(this).remove();
+                    });
                 } else {
                     alert(response.message);
                 }
             }
         });
     }
-
+    
     // Load Comments
     function loadComments(postId) {
         $.ajax({
@@ -537,17 +631,16 @@
         replyForm.style.display = replyForm.style.display === 'none' ? 'block' : 'none';
     }
 
-
     // Function to add a new comment
     function addStaffComment(postId) {
         var commentText = document.getElementById('comment-text-' + postId).value;
         if (commentText.trim() === '') {
-            alert('Comment cannot be empty.');
+            alert('Comment cannot be empty.'); // Alert user for empty input
             return;
         }
 
         $.ajax({
-            url: `/add_staff_comment/${postId}/`, 
+            url: `/add_staff_comment/${postId}/`,
             type: 'POST',
             data: {
                 'comment_text': commentText,
@@ -555,25 +648,51 @@
             },
             success: function(response) {
                 if (response.success) {
-                    // Append the new comment directly to the page
-                    var newCommentHtml = `
-                        <div id="comment-${response.comment_id}" class="comment">
-                            <p>${response.text}</p>
-                            <small>By ${response.username} on ${response.date}</small>
+                    const newComment = `
+                        <div class="comment" id="comment-${response.comment_id}">
+                            <strong>${response.username}</strong>: ${response.text}
+                            <span class="text-muted">${response.date}</span>
+
+                            <button onclick="likeStaffComment(${response.comment_id})" style="display: inline-flex; align-items: center; padding: 6px 12px; font-size: 14px; background-color: #28a745; color: white; border-radius: 4px; border: none; cursor: pointer; margin: 5px; transition: background-color 0.3s ease;">
+                                <i class="fas fa-thumbs-up" style="margin-right: 5px;"></i>
+                            </button>
+
+                            <button onclick="dislikeStaffComment(${response.comment_id})" style="display: inline-flex; align-items: center; padding: 6px 12px; font-size: 14px; background-color: #dc3545; color: white; border-radius: 4px; border: none; cursor: pointer; margin: 5px; transition: background-color 0.3s ease;">
+                                <i class="fas fa-thumbs-down" style="margin-right: 5px;"></i>
+                            </button>
+
+                            <button onclick="deleteStaffComment(${response.comment_id})" style="display: inline-flex; align-items: center; padding: 6px 12px; font-size: 14px; background-color: #ffc107; color: black; border-radius: 4px; border: none; cursor: pointer; margin: 5px; transition: background-color 0.3s ease;">
+                                <i class="fas fa-trash" style="margin-right: 5px;"></i> Delete
+                            </button>
+
+                            <button onclick="toggleReplyForm(${response.comment_id})" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-reply"></i> Reply
+                            </button>
+
+                            <!-- Comment Reply Form (Initially hidden) -->
+                            <div id="reply-form-${response.comment_id}" style="display: none;">
+                                <textarea id="reply-text-${response.comment_id}" class="form-control" placeholder="Write a reply..."></textarea>
+                                <button onclick="addStaffReply(${response.comment_id})" class="btn btn-primary btn-sm">Reply</button>
+                            </div>
                         </div>`;
-                    $('#comments-' + postId).prepend(newCommentHtml); 
-                    document.getElementById('comment-text-' + postId).value = ''; 
+
+                    // Prepend the new comment to the comments container
+                    $(`#comments-container-${postId}`).prepend(newComment);
+
+                    // Use fadeIn to animate the new comment
+                    $(`#comment-${response.comment_id}`).hide().fadeIn("slow");
+
+                    // Clear the input field after posting
+                    document.getElementById('comment-text-' + postId).value = '';
                 } else {
-                    alert('Failed to add comment: ' + response.message); 
+                    alert('Failed to add comment: ' + response.message); // Alert user on failure
                 }
             },
             error: function(xhr, status, error) {
-                console.error("Error:", error);
-                alert("An error occurred while adding the comment.");
+                alert('An error occurred while adding the comment.'); // General error alert
             }
         });
     }
-
 
     // Function to like a comment
     function likeStaffComment(commentId) {
@@ -643,7 +762,7 @@
         });
     }
 
-    // Function to add a reply to a comment
+   // Function to add a reply to a comment
     function addStaffReply(commentId) {
         var replyText = $('#reply-text-' + commentId).val();
         if (replyText.trim() === '') {
@@ -660,16 +779,34 @@
             },
             success: function(response) {
                 if (response.status === 'success') {
-                    // Append the new reply directly to the comment section
+                    // Append the new reply directly under the comment
                     var newReplyHtml = `
-                        <div id="reply-${response.reply_id}" class="reply">
-                            <p>${response.text}</p>
-                            <small>By ${response.username} on ${response.date}</small>
-                        </div>`;
-                    $('#replies-' + commentId).prepend(newReplyHtml); 
-                    $('#reply-text-' + commentId).val(''); 
+                        <div id="reply-${response.reply_id}" class="reply" style="margin-bottom: 10px;">
+                            <strong>${response.username}</strong>: ${response.text}
+                            <span class="text-muted" style="font-size: 0.85em;">${response.date}</span>
+
+                            <div style="margin-top: 5px;">
+                                <button onclick="likeStaffReply(${response.reply_id})" style="background-color: #28a745; color: white; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px; margin-right: 5px;">
+                                    <i class="fas fa-thumbs-up"></i> <span class="reply-like-count">0</span>
+                                </button>
+
+                                <button onclick="dislikeStaffReply(${response.reply_id})" style="background-color: #dc3545; color: white; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px; margin-right: 5px;">
+                                    <i class="fas fa-thumbs-down"></i> <span class="reply-dislike-count">0</span>
+                                </button>
+
+                                {% if response.user == user %}
+                                    <button onclick="deleteStaffReply(${response.reply_id})" style="background-color: #ffc107; color: black; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px;">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    `;
+                    // Append the new reply under the comment's reply section
+                    $('#replies-' + commentId).prepend(newReplyHtml);
+                    $('#reply-text-' + commentId).val(''); // Clear the reply text area
                 } else {
-                    alert('Failed to add reply: ' + response.message); 
+                    alert('Failed to add reply: ' + response.message);
                 }
             },
             error: function(xhr, status, error) {
@@ -679,45 +816,61 @@
         });
     }
 
-    // Function to delete a comment
+   // Function to delete a comment
     function deleteStaffComment(commentId) {
         if (confirm("Are you sure you want to delete this comment?")) {
+            // Remove the comment from the UI immediately
+            $('#comment-' + commentId).fadeOut("slow", function () {
+                $(this).remove(); 
+            });
+
             $.ajax({
-                url: `/staff_delete_comment/${commentId}/`, // Corrected the URL structure
+                url: `/staff_delete_comment/${commentId}/`, 
                 type: 'POST',
                 data: {
                     'csrfmiddlewaretoken': '{{ csrf_token }}',
                 },
                 success: function(response) {
-                    if (response.success) {
-                        $('#comment-' + commentId).remove(); // Remove the comment from the UI
-                    } else {
-                        alert('Failed to delete comment.');
+                    if (!response.success) {
+                        alert('Comment could not be deleted. Please try again.'); 
+                    
                     }
+                },
+                error: function() {
+                    alert('An error occurred while deleting the comment.');
                 }
             });
         }
     }
 
+
     // Function to delete a reply
     function deleteStaffReply(replyId) {
         if (confirm("Are you sure you want to delete this reply?")) {
             $.ajax({
-                url: `/staff_delete_reply/${replyId}/`, // Corrected the URL structure
+                url: `/staff_delete_reply/${replyId}/`, 
                 type: 'POST',
                 data: {
                     'csrfmiddlewaretoken': '{{ csrf_token }}',
                 },
                 success: function(response) {
                     if (response.success) {
-                        $('#reply-' + replyId).remove(); // Remove the reply from the UI
+                        // Use fadeOut to animate the removal of the reply
+                        $('#reply-' + replyId).fadeOut("slow", function() {
+                            $(this).remove(); // Remove the reply after fade-out
+                        });
                     } else {
                         alert('Failed to delete reply.');
                     }
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error:", error);
+                    alert("An error occurred while deleting the reply.");
                 }
             });
         }
     }
+
 
     // Function to load staff comments (updated for AJAX handling)
     function loadStaffComments(postId) {

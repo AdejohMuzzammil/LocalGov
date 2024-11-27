@@ -152,8 +152,28 @@ class Reply(models.Model):
     like_count = models.ManyToManyField(User, related_name='liked_replies', blank=True)
     dislike_count = models.ManyToManyField(User, related_name='disliked_replies', blank=True)
 
+    class Meta:
+        verbose_name = "Reply"
+        verbose_name_plural = "Replies"
+
     def __str__(self):
         return f'Reply by {self.user.username} on {self.comment.text}'    
+
+class ReplyToReply(models.Model):
+    reply = models.ForeignKey(Reply, related_name='nested_replies', on_delete=models.CASCADE)
+    parent = models.ForeignKey('self', related_name='child_replies', on_delete=models.CASCADE, null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    text = models.TextField()
+    date_commented = models.DateTimeField(auto_now_add=True)
+    like_count = models.ManyToManyField(User, related_name='liked_reply_to_replies', blank=True)
+    dislike_count = models.ManyToManyField(User, related_name='disliked_reply_to_replies', blank=True)
+
+    class Meta:
+        verbose_name = "Reply to Reply"
+        verbose_name_plural = "Replies to Replies"
+
+    def __str__(self):
+        return f'Reply to Reply by {self.user.username} on reply: "{self.reply.text[:30]}"'
 
 
 class StaffPostComment(models.Model):
@@ -176,8 +196,30 @@ class StaffPostReply(models.Model):
     like_count = models.ManyToManyField(User, related_name='liked_staff_replies', blank=True)
     dislike_count = models.ManyToManyField(User, related_name='disliked_staff_replies', blank=True)
 
+    class Meta:
+        verbose_name = "Staff Post Reply"
+        verbose_name_plural = "Staff Post Replies"
+
     def __str__(self):
         return f'Reply by {self.user.username} on {self.comment.text}'
+
+
+class StaffPostNestedReply(models.Model):
+    reply = models.ForeignKey(StaffPostReply, related_name='nested_replies', on_delete=models.CASCADE)
+    parent = models.ForeignKey('self', related_name='child_nested_replies', on_delete=models.CASCADE, null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    text = models.TextField()
+    date_commented = models.DateTimeField(auto_now_add=True)
+    like_count = models.ManyToManyField(User, related_name='liked_staff_nested_replies', blank=True)
+    dislike_count = models.ManyToManyField(User, related_name='disliked_staff_nested_replies', blank=True)
+
+    class Meta:
+        verbose_name = "Staff Nested Reply"
+        verbose_name_plural = "Staff Nested Replies"
+
+    def __str__(self):
+        return f'Nested Reply by {self.user.username} on reply: "{self.reply.text[:30]}"'
+
 
 class SubscriptionPlan(models.Model):
     name = models.CharField(max_length=50, default="Default Plan")

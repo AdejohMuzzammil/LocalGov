@@ -966,7 +966,7 @@ def staff_post_detail(request, staffpost_id):
     # Redirecting to home with the staffpost_id as a query parameter
     return redirect(f"{reverse('home')}?staffpost_id={staff_post.id}")
 
-# View for adding a comment to a staff post
+
 @login_required
 def add_staff_comment(request, staffpost_id):
     staff_post = get_object_or_404(StaffPost, id=staffpost_id)
@@ -989,10 +989,11 @@ def add_staff_comment(request, staffpost_id):
             'username': comment.user.username,
             'text': comment.text,
             'date': comment.date_commented.strftime("%b %d, %Y"),
-            'message': 'You commented on this post.'
+            # Updated or removed confusing message
+            'message': 'Comment added successfully.'
         })
-    return JsonResponse({'success': False, 'message': 'Invalid request method.'})
 
+    return JsonResponse({'success': False, 'message': 'Invalid request method.'})
 
 
 # View for adding a reply to a comment
@@ -1006,7 +1007,7 @@ def add_staff_reply(request, staffcomment_id, parent_reply_id=None):
     if request.method == "POST":
         text = request.POST.get('text')
         if text:
-            # Create the reply object and save it
+            # Create the reply
             reply = StaffPostReply.objects.create(
                 comment=comment,
                 parent=parent_reply,
@@ -1014,7 +1015,7 @@ def add_staff_reply(request, staffcomment_id, parent_reply_id=None):
                 text=text
             )
             
-            # Return a JSON response with the newly created reply data
+            # Return the reply details for the frontend
             return JsonResponse({
                 'status': 'success',
                 'reply_id': reply.id,
@@ -1026,6 +1027,7 @@ def add_staff_reply(request, staffcomment_id, parent_reply_id=None):
         else:
             return JsonResponse({'status': 'error', 'message': 'Reply text cannot be empty.'})
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
+
 
 # View for liking a comment
 @login_required
@@ -1071,21 +1073,24 @@ def staff_dislike_reply(request, staffreply_id):
         reply.dislike_count.remove(user)
     return redirect('staff_post_detail', staffpost_id=reply.comment.staff_post.id)
 
-# View for deleting a comment
 @login_required
 def staff_delete_comment(request, staffcomment_id):
     comment = get_object_or_404(StaffPostComment, id=staffcomment_id)
     if comment.user == request.user or request.user.is_staff:
         comment.delete()
-    return redirect('staff_post_detail', staffpost_id=comment.staff_post.id)
+        return JsonResponse({'success': True})  # Return success response
+    return JsonResponse({'success': False, 'error': 'Unauthorized action'}, status=403)
 
-# View for deleting a reply
+
 @login_required
 def staff_delete_reply(request, staffreply_id):
     reply = get_object_or_404(StaffPostReply, id=staffreply_id)
+    
     if reply.user == request.user or request.user.is_staff:
         reply.delete()
-    return redirect('staff_post_detail', staffpost_id=reply.comment.staff_post.id)
+        return JsonResponse({'success': True})
+    else:
+        return JsonResponse({'success': False, 'message': 'You are not authorized to delete this reply.'})
 
 
 # AJAX view for loading staff comments dynamically
