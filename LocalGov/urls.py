@@ -43,12 +43,17 @@ urlpatterns = [
     path('post/<int:post_id>/', views.post_detail, name='post'),
     path('post/<int:post_id>/add_comment/', views.add_comment, name='add_comment'),
     path('post/<int:comment_id>/add_reply/', views.add_reply, name='add_reply'),
+    path('reply/<int:reply_id>/reply_to_reply/', views.add_reply_to_reply, name='reply_to_reply'),
     path('like_comment/<int:comment_id>/', views.like_comment, name='like_comment'),
     path('dislike_comment/<int:comment_id>/', views.dislike_comment, name='dislike_comment'),
     path('like_reply/<int:reply_id>/', views.like_reply, name='like_reply'),
     path('dislike_reply/<int:reply_id>/', views.dislike_reply, name='dislike_reply'),
     path('delete_comment/<int:comment_id>/', views.delete_comment, name='delete_comment'),
     path('delete_reply/<int:reply_id>/', views.delete_reply, name='delete_reply'),
+
+    path('nested-replies/<int:reply_id>/like/', views.like_nested_reply, name='like_nested_reply'),
+    path('nested-replies/<int:reply_id>/dislike/', views.dislike_nested_reply, name='dislike_nested_reply'),
+    path('nested-replies/<int:reply_id>/delete/', views.delete_nested_reply, name='delete_nested_reply'),
 
     # AJAX view for loading comments dynamically
     path('load_comments/<int:post_id>/', views.load_comments, name='load_comments'),

@@ -1,3 +1,4 @@
+import json
 from django.utils import timezone
 from datetime import datetime
 from channels.layers import get_channel_layer
@@ -780,7 +781,6 @@ def post_detail(request, post_id):
 
 @login_required(login_url='/login/')
 def add_comment(request, post_id):
-    
     try:
         post = Post.objects.get(id=post_id)
     except Post.DoesNotExist:
@@ -822,7 +822,11 @@ def add_reply(request, comment_id, parent_reply_id=None):
                 text=text
             )
 
-            # Return JSON response with the reply's data
+            # Calculate the updated like and dislike counts
+            like_count = reply.like_count.count()  # Assuming you have a Like model for replies
+            dislike_count = reply.dislike_count.count()  # Similarly for dislikes
+
+            # Return JSON response with the reply's data, including the updated like/dislike counts
             return JsonResponse({
                 'status': 'success',
                 'reply_id': reply.id,
@@ -830,9 +834,45 @@ def add_reply(request, comment_id, parent_reply_id=None):
                 'text': reply.text,
                 'date': reply.date_commented.strftime("%b %d, %Y"),
                 'parent_reply_id': parent_reply.id if parent_reply else None,
+                'like_count': like_count,
+                'dislike_count': dislike_count
             })
-
     return JsonResponse({'status': 'error', 'message': 'Failed to post reply.'})
+
+
+@login_required
+def add_reply_to_reply(request, reply_id):
+    if request.method == 'POST':
+        text = request.POST.get('text')
+        
+        if text:
+            # Retrieve the parent reply
+            parent_reply = get_object_or_404(Reply, id=reply_id)
+
+            # Create a new ReplyToReply object
+            reply_to_reply = ReplyToReply.objects.create(
+                reply=parent_reply,
+                user=request.user,
+                text=text
+            )
+
+            # Check if the logged-in user is the same as the user who posted the reply
+            is_owner = reply_to_reply.user == request.user
+
+            # Return the new reply data in the response
+            response_data = {
+                'id': reply_to_reply.id,
+                'user': reply_to_reply.user.username,
+                'text': reply_to_reply.text,
+                'date_commented': reply_to_reply.date_commented.strftime('%b %d, %Y'),
+                'like_count': reply_to_reply.like_count.count(),
+                'dislike_count': reply_to_reply.dislike_count.count(),
+                'is_owner': is_owner,  # Include whether the logged-in user is the owner of this reply
+            }
+
+            return JsonResponse(response_data)
+        return JsonResponse({'error': 'Reply text is required'}, status=400)
+
 
 @login_required
 def like_comment(request, comment_id):
@@ -947,6 +987,63 @@ def delete_reply(request, reply_id):
         reply.delete()
         return JsonResponse({'status': 'success'})
     return JsonResponse({'status': 'failure', 'message': 'You can only delete your own reply.'})
+
+
+@login_required
+def like_nested_reply(request, reply_id):
+    nested_reply = get_object_or_404(ReplyToReply, id=reply_id)
+
+    # Check if the user has already liked or disliked the reply
+    has_liked = request.user in nested_reply.like_count.all()
+    has_disliked = request.user in nested_reply.dislike_count.all()
+
+    if has_liked:
+        nested_reply.like_count.remove(request.user)  # Remove like if already liked
+    else:
+        # Remove dislike if user disliked before, and add like
+        if has_disliked:
+            nested_reply.dislike_count.remove(request.user)  # Remove dislike
+        nested_reply.like_count.add(request.user)  # Add like
+
+    return JsonResponse({
+        'like_count': nested_reply.like_count.count(),
+        'dislike_count': nested_reply.dislike_count.count(),
+        'has_liked': not has_liked,
+        'has_disliked': not has_disliked,
+    })
+
+
+@login_required
+def dislike_nested_reply(request, reply_id):
+    nested_reply = get_object_or_404(ReplyToReply, id=reply_id)
+
+    # Check if the user has already liked or disliked the reply
+    has_liked = request.user in nested_reply.like_count.all()
+    has_disliked = request.user in nested_reply.dislike_count.all()
+
+    if has_disliked:
+        nested_reply.dislike_count.remove(request.user)  # Remove dislike if already disliked
+    else:
+        # Remove like if user liked before, and add dislike
+        if has_liked:
+            nested_reply.like_count.remove(request.user)  # Remove like
+        nested_reply.dislike_count.add(request.user)  # Add dislike
+
+    return JsonResponse({
+        'like_count': nested_reply.like_count.count(),
+        'dislike_count': nested_reply.dislike_count.count(),
+        'has_liked': not has_liked,
+        'has_disliked': not has_disliked,
+    })
+
+
+@login_required
+def delete_nested_reply(request, reply_id):
+    nested_reply = get_object_or_404(ReplyToReply, id=reply_id)
+    if nested_reply.user == request.user:
+        nested_reply.delete()
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False}, status=403)
 
 
 @login_required

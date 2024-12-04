@@ -111,22 +111,32 @@ class StaffPost(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     feedback = models.TextField(blank=True, null=True) 
 
+    # Likes
+    likes = models.ManyToManyField(User, related_name='liked_staffposts', blank=True)
+
     def __str__(self):
         return self.title
-   
-     
+
+
 class Post(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     image = models.ImageField(upload_to='media/post_images/', blank=True, null=True)
     video = models.FileField(upload_to='media/post_videos/', blank=True, null=True)
     date_posted = models.DateTimeField(auto_now_add=True)
+    
+    # Related fields
     state = models.ForeignKey(State, related_name='post_states', on_delete=models.CASCADE)
     local_government = models.ForeignKey(LocalGovernment, related_name='post_local_governments', on_delete=models.CASCADE)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
+    
+    # Location fields
     location = models.CharField(max_length=255, blank=True, null=True)
     latitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
+
+    # Likes
+    likes = models.ManyToManyField(User, related_name='liked_posts', blank=True)
 
     def __str__(self):
         return self.title
@@ -140,8 +150,12 @@ class Comment(models.Model):
     like_count = models.ManyToManyField(User, related_name='liked_comments', blank=True)
     dislike_count = models.ManyToManyField(User, related_name='disliked_comments', blank=True)
 
+    class Meta:
+        ordering = ['-date_commented']  
+
     def __str__(self):
         return f'Comment by {self.user.username} on {self.post.title}'
+
 
 class Reply(models.Model):
     comment = models.ForeignKey(Comment, related_name='replies', on_delete=models.CASCADE, null=True, blank=True)
@@ -155,25 +169,29 @@ class Reply(models.Model):
     class Meta:
         verbose_name = "Reply"
         verbose_name_plural = "Replies"
+        ordering = ['-date_commented']  
 
     def __str__(self):
-        return f'Reply by {self.user.username} on {self.comment.text}'    
+        if self.comment is None:
+            return f'Reply by {self.user.username} (no comment associated)'
+        return f'Reply by {self.user.username} on {self.comment.text}'
+
 
 class ReplyToReply(models.Model):
     reply = models.ForeignKey(Reply, related_name='nested_replies', on_delete=models.CASCADE)
     parent = models.ForeignKey('self', related_name='child_replies', on_delete=models.CASCADE, null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    text = models.TextField()
+    text = models.TextField(null=True, blank=True)
     date_commented = models.DateTimeField(auto_now_add=True)
     like_count = models.ManyToManyField(User, related_name='liked_reply_to_replies', blank=True)
     dislike_count = models.ManyToManyField(User, related_name='disliked_reply_to_replies', blank=True)
 
     class Meta:
-        verbose_name = "Reply to Reply"
-        verbose_name_plural = "Replies to Replies"
+        verbose_name_plural = "Replies to Reply"
+        ordering = ['-date_commented']  
 
     def __str__(self):
-        return f'Reply to Reply by {self.user.username} on reply: "{self.reply.text[:30]}"'
+        return f'Reply to Reply by {self.user.username} on {self.reply.text}'
 
 
 class StaffPostComment(models.Model):

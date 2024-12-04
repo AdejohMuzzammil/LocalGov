@@ -8,6 +8,7 @@
 
 
 <div class="posts-list">
+    
     <!-- Posts Section -->
     {% for post in posts %}
     <div class="card mb-3">
@@ -86,62 +87,137 @@
                                     </button>
                                 {% endif %}
 
+                                <!-- Reply Button for Main Comment -->
                                 <button onclick="toggleReplyForm({{ comment.id }})" style="background-color: #6c757d; color: white; border: none; padding: 5px 10px; font-size: 0.85em; border-radius: 3px;">
                                     <i class="fas fa-reply"></i> Reply
                                 </button>
+
+                                 <!-- Reply Form (Initially hidden) -->
+                                <div id="reply-form-{{ comment.id }}" style="display: none; margin-top: 10px;">
+                                    <div class="input-group" style="border-radius: 20px; overflow: hidden; display: flex; align-items: center;">
+                                        <!-- Textarea with enhanced styling to align with the button -->
+                                        <textarea 
+                                            id="reply-text-{{ comment.id }}" 
+                                            class="form-control" 
+                                            placeholder="Write a reply..." 
+                                            style="border-radius: 25px; font-size: 1em; padding: 10px 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border: 1px solid #ddd; height: 50px; resize: none; flex-grow: 1;">
+                                        </textarea>
+                                        
+                                        <button 
+                                            onclick="addReply({{ comment.id }})" 
+                                            class="btn btn-primary" 
+                                            style="display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 1.2em; width: 50px; height: 50px; padding: 0; background-color: #fcdc56; border: none; margin-left: 10px; outline: none;">
+                                            <i class="fas fa-paper-plane" style="color: white;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
                             </div>
 
-                            <!-- Reply Form (Initially hidden) -->
-                            <div id="reply-form-{{ comment.id }}" style="display: none; margin-top: 10px;">
-                                <div class="input-group" style="border-radius: 20px; overflow: hidden; display: flex; align-items: center;">
-                                    <!-- Textarea with enhanced styling to align with the button -->
-                                    <textarea 
-                                        id="reply-text-{{ comment.id }}" 
-                                        class="form-control" 
-                                        placeholder="Write a reply..." 
-                                        style="border-radius: 25px; font-size: 1em; padding: 10px 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border: 1px solid #ddd; height: 50px; resize: none; flex-grow: 1;">
-                                    </textarea>
-                                    
-                                    <button 
-                                        onclick="addReply({{ comment.id }})" 
-                                        class="btn btn-primary" 
-                                        style="display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 1.2em; width: 50px; height: 50px; padding: 0; background-color: #fcdc56; border: none; margin-left: 10px; outline: none;">
-                                        <i class="fas fa-paper-plane" style="color: white;"></i>
-                                    </button>
-                                </div>
-                            </div>
+                           
+                            
                             
 
                             <!-- Replies Section -->
-                            <div class="replies" style="margin-top: 10px;">
+                            <div id="replies-{{ reply.id }}" style="margin-top: 10px;">
                                 {% for reply in comment.replies.all %}
                                     <div class="reply" id="reply-{{ reply.id }}" style="margin-bottom: 10px;">
                                         <strong>{{ reply.user.username }}</strong>: {{ reply.text }}
                                         <span class="text-muted" style="font-size: 0.85em;">{{ reply.date_commented|date:"F j, Y" }}</span>
 
                                         <div style="margin-top: 5px;">
-                                            <button onclick="likeReply({{ reply.id }})" style="background-color: #28a745; color: white; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px; margin-right: 5px;">
+                                            <button onclick="likeReply({{ reply.id }})" 
+                                                    style="background-color: #28a745; color: white; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px; margin-right: 5px;">
                                                 <i class="fas fa-thumbs-up"></i> <span class="reply-like-count">{{ reply.like_count.count }}</span>
                                             </button>
 
-                                            <button onclick="dislikeReply({{ reply.id }})" style="background-color: #dc3545; color: white; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px; margin-right: 5px;">
+                                            <button onclick="dislikeReply({{ reply.id }})" 
+                                                    style="background-color: #dc3545; color: white; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px; margin-right: 5px;">
                                                 <i class="fas fa-thumbs-down"></i> <span class="reply-dislike-count">{{ reply.dislike_count.count }}</span>
                                             </button>
 
                                             {% if reply.user == user %}
-                                                <button onclick="deleteReply({{ reply.id }})" style="background-color: #ffc107; color: black; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px;">
+                                                <button onclick="deleteReply({{ reply.id }})" 
+                                                        style="background-color: #ffc107; color: black; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px;">
                                                     <i class="fas fa-trash"></i> Delete
                                                 </button>
                                             {% endif %}
+
+                                            <!-- Reply Button for Nested Replies -->
+                                        <button onclick="toggleReplyReplyForm({{ reply.id }})" style="background-color: #6c757d; color: white; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px;">
+                                            <i class="fas fa-reply"></i> Reply
+                                        </button>
+                                        
+                                            <!-- Reply Form for Reply -->
+                                        <div id="reply-reply-form-{{ reply.id }}" style="display: none; margin-top: 10px; margin-left: 20px; display: flex; align-items: center;">
+                                            <textarea 
+                                                id="reply-reply-text-{{ reply.id }}" 
+                                                class="form-control mb-2" 
+                                                placeholder="Write a reply..." 
+                                                style="border-radius: 10px; font-size: 1em; resize: none; flex-grow: 1; height: 40px;">
+                                            </textarea>
+
+                                            <button 
+                                                onclick="addReplyToReply({{ reply.id }})" 
+                                                class="btn btn-primary" 
+                                                style="background-color: #fcdc56; border: none; border-radius: 50%; font-size: 1.2em; width: 50px; height: 50px; padding: 0; outline: none; margin-left: 10px; display: flex; justify-content: center; align-items: center;">
+                                                <i class="fas fa-paper-plane" style="color: white;"></i>
+                                            </button>
                                         </div>
+
+
+                                        <!-- Nested Replies Section -->
+                                        <div class="nested-replies" id="nested-replies-{{ reply.id }}" style="margin-top: 10px;">
+                                            {% for nested_reply in reply.nested_replies.all %}
+                                                <div class="reply-to-reply" id="reply-to-reply-{{ nested_reply.id }}" 
+                                                    style="margin-left: 20px; margin-top: 10px; padding: 10px; background-color: #f9f9f9; border-radius: 8px; border: 1px solid #eaeaea;">
+                                                    <strong style="color: #343a40;">{{ nested_reply.user.username }}</strong>: {{ nested_reply.text }}
+                                                    <span class="text-muted" style="font-size: 0.85em; margin-left: 10px;">{{ nested_reply.date_commented|date:"F j, Y" }}</span>
+
+                                                    <div style="margin-top: 5px;">
+                                                        <button onclick="likeReplyReply({{ nested_reply.id }})" 
+                                                                style="background-color: #28a745; color: white; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px; margin-right: 5px;">
+                                                            <i class="fas fa-thumbs-up"></i> <span class="reply-like-count">{{ nested_reply.like_count.count }}</span>
+                                                        </button>
+
+                                                        <button onclick="dislikeReplyReply({{ nested_reply.id }})" 
+                                                                style="background-color: #dc3545; color: white; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px; margin-right: 5px;">
+                                                            <i class="fas fa-thumbs-down"></i> <span class="reply-dislike-count">{{ nested_reply.dislike_count.count }}</span>
+                                                        </button>
+
+                                                        {% if nested_reply.user == user %}
+                                                            <button onclick="deleteReplyReply({{ nested_reply.id }})" 
+                                                                    style="background-color: #ffc107; color: black; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px;">
+                                                                <i class="fas fa-trash"></i> Delete
+                                                            </button>
+                                                        {% endif %}
+
+                                                        <button onclick="toggleReplyReplyForm({{ nested_reply.id }})" 
+                                                                style="background-color: #6c757d; color: white; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px;">
+                                                            <i class="fas fa-reply"></i> Reply
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+
+                                            
+                                        </div>
+
+                                        
+
                                     </div>
                                 {% endfor %}
                             </div>
+
+
+
 
                             <hr style="border: 1px solid #ddd; margin-top: 15px;">
                         </div>
                     {% endfor %}
                 </div>
+
 
             <!-- Comment Input -->
                 <div class="input-group" style="margin-top: 10px; display: flex; align-items: center; border-radius: 20px; overflow: hidden;">
@@ -163,9 +239,11 @@
             {% endif %}
         </div>
     </div>
+    
 
     </div>
     {% endfor %}
+    
 
     <!-- Approved Posts Section -->
     {% for post in approved_posts %}
@@ -340,12 +418,39 @@
         }
     }
 
+
+
+    // Toggles the visibility of the reply form for comments
     function toggleReplyForm(commentId) {
-        const replyForm = document.getElementById(`reply-form-${commentId}`);
-        // Toggle the visibility of the reply form
-        replyForm.style.display = replyForm.style.display === 'none' ? 'block' : 'none';
+        const form = document.getElementById(`reply-form-${commentId}`);
+        if (form.style.display === "none") {
+            form.style.display = "flex"; // Show form
+        } else {
+            form.style.display = "none"; // Hide form
+        }
     }
-    
+
+
+    // Toggles the visibility 
+    function toggleReplyReplyForm(replyId) {
+        const form = document.getElementById(`reply-reply-form-${replyId}`);
+        if (form.style.display === "none") {
+            form.style.display = "flex"; // Show form
+        } else {
+            form.style.display = "none"; // Hide form
+        }
+    }
+
+
+    // Hides all reply forms on page load
+    window.onload = function () {
+        const replyForms = document.querySelectorAll('[id^="reply-form-"], [id^="reply-reply-form-"]');
+        replyForms.forEach(form => {
+            form.style.display = "none"; 
+        });
+    };
+
+
     // Add Comment Function 
     function addComment(postId) {
         const commentText = document.getElementById(`comment-text-${postId}`).value.trim();
@@ -430,6 +535,7 @@
         });
     }
 
+
     function addReply(commentId) {
         // Get the reply text from the textarea
         const replyText = document.getElementById(`reply-text-${commentId}`).value;
@@ -446,21 +552,46 @@
                 if (response.status === 'success') {
                     // Create the new reply element to display on the page
                     const newReply = `
-                        <div class="reply" id="reply-${response.reply_id}" style="display: none;">
+                        <div class="reply" id="reply-${response.reply_id}" style="display: none; margin-top: 10px;">
                             <strong>${response.username}</strong>: ${response.text}
                             <span class="text-muted">${response.date}</span>
     
-                            <button onclick="likeReply(${response.reply_id})" style="display: inline-flex; align-items: center; padding: 6px 12px; font-size: 14px; background-color: #28a745; color: white; border-radius: 4px; border: none; cursor: pointer; margin: 5px; transition: background-color 0.3s ease;">
-                                <i class="fas fa-thumbs-up" style="margin-right: 5px;"></i> 
+                            <!-- Like Button -->
+                            <button onclick="likeReply(${response.reply_id})" 
+                                style="background-color: #28a745; color: white; border: none; padding: 5px 10px; font-size: 0.85em; border-radius: 3px; margin-right: 5px;">
+                                <i class="fas fa-thumbs-up"></i> <span class="reply-like-count">${response.like_count}</span>
                             </button>
     
-                            <button onclick="dislikeReply(${response.reply_id})" style="display: inline-flex; align-items: center; padding: 6px 12px; font-size: 14px; background-color: #dc3545; color: white; border-radius: 4px; border: none; cursor: pointer; margin: 5px; transition: background-color 0.3s ease;">
-                                <i class="fas fa-thumbs-down" style="margin-right: 5px;"></i> 
+                            <!-- Dislike Button -->
+                            <button onclick="dislikeReply(${response.reply_id})" 
+                                style="background-color: #dc3545; color: white; border: none; padding: 5px 10px; font-size: 0.85em; border-radius: 3px; margin-right: 5px;">
+                                <i class="fas fa-thumbs-down"></i> <span class="reply-dislike-count">${response.dislike_count}</span>
                             </button>
     
-                            <button onclick="deleteReply(${response.reply_id})" style="display: inline-flex; align-items: center; padding: 6px 12px; font-size: 14px; background-color: #ffc107; color: black; border-radius: 4px; border: none; cursor: pointer; margin: 5px; transition: background-color 0.3s ease;">
-                                <i class="fas fa-trash" style="margin-right: 5px;"></i> Delete
+                            <!-- Delete Button -->
+                            <button onclick="deleteReply(${response.reply_id})" 
+                                style="background-color: #ffc107; color: black; border: none; padding: 5px 10px; font-size: 0.85em; border-radius: 3px; margin-right: 5px;">
+                                <i class="fas fa-trash"></i> Delete
                             </button>
+    
+                            <!-- Reply Button -->
+                            <button onclick="toggleReplyReplyForm(${response.reply_id})" 
+                                style="background-color: #6c757d; color: white; border: none; padding: 5px 10px; font-size: 0.85em; border-radius: 3px;">
+                                <i class="fas fa-reply"></i> Reply
+                            </button>
+                        </div>
+                        <!-- Reply Form (Initially hidden) -->
+                        <div id="reply-reply-form-${response.reply_id}" style="display: none; margin-top: 10px;">
+                            <div class="input-group" style="border-radius: 20px; overflow: hidden; display: flex; align-items: center;">
+                                <textarea id="reply-text-${response.reply_id}" class="form-control" placeholder="Write a reply..." 
+                                    style="border-radius: 25px; font-size: 1em; padding: 10px 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border: 1px solid #ddd; height: 50px; resize: none; flex-grow: 1;">
+                                </textarea>
+                                <button onclick="addReply(${response.reply_id})" 
+                                    class="btn btn-primary" 
+                                    style="display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 1.2em; width: 50px; height: 50px; padding: 0; background-color: #fcdc56; border: none; margin-left: 10px; outline: none;">
+                                    <i class="fas fa-paper-plane" style="color: white;"></i>
+                                </button>
+                            </div>
                         </div>`;
     
                     // Append the new reply under the respective comment's reply section
@@ -469,13 +600,69 @@
                     // Fade in the new reply
                     $(`#reply-${response.reply_id}`).fadeIn();
     
-                    // Clear the reply textarea
+                    // Clear the reply textarea for the comment
                     document.getElementById(`reply-text-${commentId}`).value = '';
                 }
             }
         });
     }
     
+
+    // Add Reply-to-Reply via AJAX
+    function addReplyToReply(replyId) {
+        let replyText = document.getElementById(`reply-reply-text-${replyId}`).value;
+        if (replyText.trim() === "") return;
+
+        // Send the reply text to the server
+        $.ajax({
+            url: '/reply/' + replyId + '/reply_to_reply/',  // Correct URL for replying to a reply
+            type: "POST",
+            data: {
+                reply_id: replyId,
+                text: replyText,
+                csrfmiddlewaretoken: "{{ csrf_token }}",
+            },
+
+            success: function(response) {
+                // Update the UI with the new nested reply
+                let nestedRepliesSection = document.getElementById(`nested-replies-${replyId}`);
+                let newReply = `
+                    <div class="reply-to-reply" id="reply-to-reply-${response.id}" style="margin-left: 20px; margin-top: 10px; padding: 10px; background-color: #f9f9f9; border-radius: 8px; border: 1px solid #eaeaea;">
+                        <strong style="color: #343a40;">${response.user}</strong>: ${response.text}
+                        <span class="text-muted" style="font-size: 0.85em; margin-left: 10px;">${response.date_commented}</span>
+                        <div style="margin-top: 5px;">
+                            <button onclick="likeReplyReply(${response.id})" id="like-button-${response.id}" style="background-color: #28a745; color: white; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px; margin-right: 5px;">
+                                <i class="fas fa-thumbs-up"></i> <span class="reply-like-count">${response.like_count}</span>
+                            </button>
+
+                            <button onclick="dislikeReplyReply(${response.id})" id="dislike-button-${response.id}" style="background-color: #dc3545; color: white; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px; margin-right: 5px;">
+                                <i class="fas fa-thumbs-down"></i> <span class="reply-dislike-count">${response.dislike_count}</span>
+                            </button>
+
+                            <!-- Only show the delete button if the user is the owner of the reply -->
+                            ${response.is_owner ? `
+                                <button onclick="deleteReplyReply(${response.id})" id="delete-button-${response.id}" style="background-color: #ffc107; color: black; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px;">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            ` : ''}
+
+                            <button onclick="toggleReplyReplyForm(${response.id})" id="reply-button-${response.id}" style="background-color: #6c757d; color: white; border: none; padding: 3px 8px; font-size: 0.8em; border-radius: 3px;">
+                                <i class="fas fa-reply"></i> Reply
+                            </button>
+                        </div>
+                    </div>
+                `;
+                nestedRepliesSection.insertAdjacentHTML('beforeend', newReply);
+                document.getElementById(`reply-reply-text-${replyId}`).value = ''; // Clear the textarea
+            },
+
+            error: function(error) {
+                console.log("Error: ", error);
+            }
+        });
+    }
+
+
     // Like and Dislike Comment Functions
     function likeComment(commentId) {
         $.ajax({
@@ -499,6 +686,7 @@
         });
     }
 
+
     function dislikeComment(commentId) {
         $.ajax({
             url: `/dislike_comment/${commentId}/`,
@@ -521,6 +709,7 @@
         });
     }
         
+
     function deleteComment(commentId) {
         $.ajax({
             type: 'POST',
@@ -563,6 +752,7 @@
         });
     }
 
+
     function dislikeReply(replyId) {
         $.ajax({
             url: `/dislike_reply/${replyId}/`,
@@ -585,6 +775,7 @@
         });
     }
 
+
     function deleteReply(replyId) {
         $.ajax({
             type: 'POST',
@@ -602,6 +793,92 @@
         });
     }
     
+
+    function likeReplyReply(replyId) {
+        $.ajax({
+            url: `/nested-replies/${replyId}/like/`,
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            success: function (response) {
+                // Update like and dislike counts in the UI based on server response
+                $(`#reply-to-reply-${replyId} .reply-like-count`).text(response.like_count);
+                $(`#reply-to-reply-${replyId} .reply-dislike-count`).text(response.dislike_count);
+                
+                // Optionally, toggle button styles to reflect current state
+                if (response.has_liked) {
+                    // Mark "liked" button as active
+                    $(`#reply-to-reply-${replyId} .like-btn`).addClass('active');
+                    $(`#reply-to-reply-${replyId} .dislike-btn`).removeClass('active');
+                } else {
+                    // Mark "disliked" button as active
+                    $(`#reply-to-reply-${replyId} .dislike-btn`).addClass('active');
+                    $(`#reply-to-reply-${replyId} .like-btn`).removeClass('active');
+                }
+            },
+            error: function (error) {
+                console.error("Error liking reply:", error);
+            }
+        });
+    }
+    
+    function dislikeReplyReply(replyId) {
+        $.ajax({
+            url: `/nested-replies/${replyId}/dislike/`,
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            success: function (response) {
+                // Update like and dislike counts in the UI based on server response
+                $(`#reply-to-reply-${replyId} .reply-dislike-count`).text(response.dislike_count);
+                $(`#reply-to-reply-${replyId} .reply-like-count`).text(response.like_count);
+    
+                // Optionally, toggle button styles to reflect current state
+                if (response.has_disliked) {
+                    // Mark "disliked" button as active
+                    $(`#reply-to-reply-${replyId} .dislike-btn`).addClass('active');
+                    $(`#reply-to-reply-${replyId} .like-btn`).removeClass('active');
+                } else {
+                    // Mark "liked" button as active
+                    $(`#reply-to-reply-${replyId} .like-btn`).addClass('active');
+                    $(`#reply-to-reply-${replyId} .dislike-btn`).removeClass('active');
+                }
+            },
+            error: function (error) {
+                console.error("Error disliking reply:", error);
+            }
+        });
+    }
+    
+        function deleteReplyReply(replyId) {
+        if (confirm("Are you sure you want to delete this reply?")) {
+            $.ajax({
+                url: `/nested-replies/${replyId}/delete/`,
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                success: function (response) {
+                    if (response.success) {
+                        // Apply fadeOut effect before removing the reply
+                        $(`#reply-to-reply-${replyId}`).fadeOut(500, function() {
+                            $(this).remove();  // Remove the element after fadeOut
+                        });
+                    } else {
+                        alert("Failed to delete reply.");
+                    }
+                },
+                error: function (error) {
+                    console.error("Error deleting reply:", error);
+                }
+            });
+        }
+    }
+
+
+
     // Load Comments
     function loadComments(postId) {
         $.ajax({
